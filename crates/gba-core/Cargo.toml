@@ -1,0 +1,15 @@
+[package]
+name = "gba-core"
+description = "API de emulación de Game Boy Advance (envoltorio sobre rustboyadvance-core)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rustboyadvance-core = { path = "../../vendor/rustboyadvance-ng/core" }
+thiserror = "2"

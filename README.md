@@ -4,8 +4,50 @@ Emulador de **Game Boy Advance** escrito en Rust, para escritorio y web. Es el s
 (NES → GBA → Nintendo DS): continúa el trabajo de [replica-NES](https://github.com/DEIMER-PY/replica-NES)
 y prepara el terreno para la DS, que reutiliza la misma CPU (ARM7TDMI).
 
-> Estado: en desarrollo. Consulta [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Estado:** el core de emulación y su API (`gba-core`) funcionan y tienen tests. La app con ventana
+> todavía no existe. Ver [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## Qué hay
+
+- **`crates/gba-core`** — API de emulación: cargar una ROM, emular frame a frame, imagen 240×160, audio
+  estéreo, botones, save states y partidas guardadas. Sin acceso a disco, lista para escritorio y web.
+- **`vendor/rustboyadvance-ng`** — el core que hace el trabajo (CPU ARM7TDMI, PPU, APU, DMA, timers,
+  cartucho), tomado de [rustboyadvance-ng](https://github.com/michelhe/rustboyadvance-ng) y parcheado.
+- **BIOS libre incluida** ([Cult-of-GBA](https://github.com/Cult-of-GBA/BIOS)): no hace falta la BIOS de Nintendo.
+
+## Probarlo
+
+Requiere [Rust](https://rustup.rs) estable (≥ 1.95).
+
+```sh
+cargo test --workspace                              # tests
+cargo run -p gba-core --release --example bench     # velocidad del core (~10x la real)
+```
+
+```rust
+use gba_core::{Button, Emulator};
+
+let mut gba = Emulator::new();
+gba.load_rom("demo", &gba_core::demo_rom())?;
+gba.set_button(Button::A, true);
+gba.run_frame()?;
+let imagen = gba.frame(); // 240×160 RGBA
+```
+
+## Documentación
+
+| Documento | Contenido |
+|---|---|
+| [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) | Capas, API de `gba-core`, decisiones de diseño |
+| [docs/REFERENCIAS.md](docs/REFERENCIAS.md) | Cores, tests, documentación y herramientas evaluados; por qué se eligió cada uno |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Qué está hecho, qué falta y el plan hacia la Nintendo DS |
+| [docs/GUIA-DESARROLLO.md](docs/GUIA-DESARROLLO.md) | Entorno, comandos, flujo de ramas y convención de commits |
+| [CHANGELOG.md](CHANGELOG.md) | Cambios por versión |
 
 ## Licencia
 
-[MIT](LICENSE). No se incluyen ROMs ni BIOS con derechos de autor.
+[MIT](LICENSE). El código de terceros conserva su licencia (también MIT): ver
+[`vendor/rustboyadvance-ng`](vendor/rustboyadvance-ng/PARCHES.md) y
+[`crates/gba-core/bios`](crates/gba-core/bios/LICENSE-cult-of-gba).
+
+No se incluyen ni se distribuyen ROMs comerciales ni la BIOS de Nintendo.
