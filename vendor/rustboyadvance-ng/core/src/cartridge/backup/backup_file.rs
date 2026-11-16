@@ -1,71 +1,34 @@
-use std::fmt;
+// PARCHE gba-emulator-console (ver vendor/rustboyadvance-ng/PARCHES.md):
+// el contenido de la memoria de guardado vive en `buffer` y se conserva al clonar y
+// al serializar, de modo que funciona sin disco (web) y viaja dentro de los save
+// states. El volcado a archivo sigue disponible si se da una ruta.
 use std::fs::{File, OpenOptions};
 use std::io::SeekFrom;
 use std::io::prelude::*;
 use std::path::PathBuf;
 
-use serde::de::{self, Deserialize, Deserializer, SeqAccess, Visitor};
-use serde::ser::{Serialize, SerializeStruct, Serializer};
+use serde::{Deserialize, Serialize};
 
 use super::BackupMemoryInterface;
 use rustboyadvance_utils::write_bin_file;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct BackupFile {
     size: usize,
     path: Option<PathBuf>,
+    #[serde(skip)]
     file: Option<File>,
     buffer: Vec<u8>,
 }
 
 impl Clone for BackupFile {
     fn clone(&self) -> Self {
-        BackupFile::new(self.size, self.path.clone())
-    }
-}
-
-impl Serialize for BackupFile {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut state = serializer.serialize_struct("BackupFile", 2)?;
-        state.serialize_field("size", &self.size)?;
-        state.serialize_field("path", &self.path)?;
-        state.end()
-    }
-}
-
-impl<'de> Deserialize<'de> for BackupFile {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct BackupFileVisitor;
-
-        impl<'de> Visitor<'de> for BackupFileVisitor {
-            type Value = BackupFile;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-                formatter.write_str("struct BackupFile")
-            }
-
-            fn visit_seq<V>(self, mut seq: V) -> Result<BackupFile, V::Error>
-            where
-                V: SeqAccess<'de>,
-            {
-                let size = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(0, &self))?;
-                let path: Option<PathBuf> = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(1, &self))?;
-                Ok(BackupFile::new(size, path))
-            }
+        BackupFile {
+            size: self.size,
+            path: self.path.clone(),
+            file: self.file.as_ref().and_then(|file| file.try_clone().ok()),
+            buffer: self.buffer.clone(),
         }
-
-        const FIELDS: &[&str] = &["size", "path"];
-        deserializer.deserialize_struct("BackupFile", FIELDS, BackupFileVisitor)
     }
 }
 
@@ -109,6 +72,15 @@ impl BackupFile {
 
     pub fn bytes_mut(&mut self) -> &mut [u8] {
         &mut self.buffer
+    }
+
+    /// Sustituye el contenido por `data`, recortando o rellenando con `0xff` hasta el
+    /// tamaño de la memoria.
+    pub fn load_bytes(&mut self, data: &[u8]) {
+        let len = data.len().min(self.buffer.len());
+        self.buffer.fill(0xff);
+        self.buffer[..len].copy_from_slice(&data[..len]);
+        self.flush();
     }
 
     pub fn flush(&mut self) {

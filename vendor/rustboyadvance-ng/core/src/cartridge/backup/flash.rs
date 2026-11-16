@@ -86,6 +86,16 @@ impl Flash {
         }
     }
 
+    /// PARCHE gba-emulator-console: contenido de la Flash como bytes.
+    pub fn backup_bytes(&self) -> &[u8] {
+        self.memory.bytes()
+    }
+
+    /// PARCHE gba-emulator-console: restaura la Flash desde bytes.
+    pub fn load_backup_bytes(&mut self, data: &[u8]) {
+        self.memory.load_bytes(data);
+    }
+
     fn reset_sequence(&mut self) {
         self.wrseq = FlashWriteSequence::Initial;
     }

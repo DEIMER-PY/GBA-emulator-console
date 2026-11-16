@@ -49,12 +49,6 @@ xml-builder = "0.5.0"
 goblin = { version = "0.10.1", optional = true }
 clap = { version = "4.5.46", features = ["derive"] }
 
-[dev-dependencies]
-criterion = "0.7.0"
-
-[[bench]]
-name = "performance"
-harness = false
 
 [features]
 default = []

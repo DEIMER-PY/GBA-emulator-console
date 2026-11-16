@@ -133,6 +133,11 @@ impl SoundController {
         }
     }
 
+    /// PARCHE gba-emulator-console: cambia la frecuencia de muestreo de salida.
+    pub fn set_output_sample_rate(&mut self, sample_rate: f32) {
+        self.resampler.out_freq = sample_rate;
+    }
+
     pub fn handle_read(&self, io_addr: u32) -> u16 {
         // println!(
         //     "Read {} ({:08x}) = {:04x}",

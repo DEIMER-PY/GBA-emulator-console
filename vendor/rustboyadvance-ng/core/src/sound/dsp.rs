@@ -13,7 +13,8 @@ pub struct CosineResampler {
     last_in_sample: StereoSample<f32>,
     phase: f32,
     pub in_freq: f32,
-    out_freq: f32,
+    // PARCHE gba-emulator-console: público para cambiar la frecuencia de salida.
+    pub out_freq: f32,
 }
 
 fn cosine_interpolation(y1: f32, y2: f32, phase: f32) -> f32 {

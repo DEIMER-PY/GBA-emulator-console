@@ -55,6 +55,27 @@ impl Cartridge {
         &self.gpio
     }
 
+    /// PARCHE gba-emulator-console: memoria de guardado del cartucho (SRAM, Flash o
+    /// EEPROM) como bytes, o `None` si el cartucho no guarda partida.
+    pub fn backup_bytes(&self) -> Option<Vec<u8>> {
+        match &self.backup {
+            BackupMedia::Sram(memory) => Some(memory.bytes().to_vec()),
+            BackupMedia::Flash(flash) => Some(flash.backup_bytes().to_vec()),
+            BackupMedia::Eeprom(eeprom) => Some(eeprom.backup_bytes()),
+            BackupMedia::Undetected => None,
+        }
+    }
+
+    /// PARCHE gba-emulator-console: restaura la memoria de guardado desde bytes.
+    pub fn load_backup_bytes(&mut self, data: &[u8]) {
+        match &mut self.backup {
+            BackupMedia::Sram(memory) => memory.load_bytes(data),
+            BackupMedia::Flash(flash) => flash.load_backup_bytes(data),
+            BackupMedia::Eeprom(eeprom) => eeprom.load_backup_bytes(data),
+            BackupMedia::Undetected => {}
+        }
+    }
+
     pub fn set_rom_bytes(&mut self, bytes: Box<[u8]>) {
         self.size = bytes.len();
         self.bytes = bytes;

@@ -200,6 +200,22 @@ impl GameBoyAdvance {
         Ok(())
     }
 
+    /// PARCHE gba-emulator-console: memoria de guardado del cartucho como bytes.
+    pub fn backup_bytes(&self) -> Option<Vec<u8>> {
+        self.sysbus.cartridge.backup_bytes()
+    }
+
+    /// PARCHE gba-emulator-console: restaura la memoria de guardado del cartucho.
+    pub fn load_backup_bytes(&mut self, data: &[u8]) {
+        self.sysbus.cartridge.load_backup_bytes(data);
+    }
+
+    /// PARCHE gba-emulator-console: cambia la frecuencia de muestreo del audio de
+    /// salida sin reiniciar la consola.
+    pub fn set_audio_sample_rate(&mut self, sample_rate: f32) {
+        self.sysbus.io.sound.set_output_sample_rate(sample_rate);
+    }
+
     pub fn get_game_title(&self) -> String {
         self.sysbus.cartridge.header.game_title.clone()
     }

@@ -306,6 +306,25 @@ impl EepromController {
         }
     }
 
+    /// PARCHE gba-emulator-console: contenido de la EEPROM como bytes.
+    pub fn backup_bytes(&self) -> Vec<u8> {
+        self.chip.borrow().memory.bytes().to_vec()
+    }
+
+    /// PARCHE gba-emulator-console: restaura la EEPROM desde bytes. El tamaño de los
+    /// datos (512 bytes u 8 KiB) fija el tipo de chip, igual que al abrir un archivo.
+    pub fn load_backup_bytes(&mut self, data: &[u8]) {
+        let eeprom_type = match data.len() {
+            512 => EepromType::Eeprom512,
+            8192 => EepromType::Eeprom8k,
+            _ => return,
+        };
+        let mut chip = self.chip.borrow_mut();
+        chip.set_type(eeprom_type);
+        chip.memory.load_bytes(data);
+        self.detect = false;
+    }
+
     pub fn write_half(&mut self, address: u32, value: u16) {
         assert!(!self.detect);
         self.chip.borrow_mut().clock_data_in(address, value as u8);
