@@ -20,3 +20,6 @@ gba_bios.bin
 *.swp
 .DS_Store
 Thumbs.db
+
+# Lockfile que crea cargo al ejecutar los tests del core de terceros por separado
+/vendor/**/Cargo.lock

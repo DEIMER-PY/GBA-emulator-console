@@ -35,6 +35,9 @@ pub struct GameBoyAdvance {
     interrupt_flags: SharedInterruptFlags,
     audio_interface: DynAudioInterface,
     pub(crate) debugger: Option<DebuggerRequestHandler>,
+    // PARCHE gba-emulator-console: ciclos emulados de más en el frame anterior. Era una
+    // `static mut` compartida entre todas las consolas (y entre hilos).
+    overshoot: usize,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -115,6 +118,7 @@ impl GameBoyAdvance {
             scheduler,
             interrupt_flags,
             debugger: None,
+            overshoot: 0,
         };
 
         gba.sysbus.init(gba.cpu.weak_ptr());
@@ -161,6 +165,7 @@ impl GameBoyAdvance {
             audio_interface,
             scheduler,
             debugger: None,
+            overshoot: 0,
         })
     }
 
@@ -236,20 +241,14 @@ impl GameBoyAdvance {
 
     /// Advance the emulation for one frame worth of time
     pub fn frame(&mut self) {
-        static mut OVERSHOOT: usize = 0;
-        unsafe {
-            OVERSHOOT = CYCLES_FULL_REFRESH
-                .saturating_sub(self.run::<false>(CYCLES_FULL_REFRESH - OVERSHOOT));
-        }
+        self.overshoot = CYCLES_FULL_REFRESH
+            .saturating_sub(self.run::<false>(CYCLES_FULL_REFRESH - self.overshoot));
     }
 
     /// like frame() but stop if a breakpoint is reached
     fn frame_interruptible(&mut self) {
-        static mut OVERSHOOT: usize = 0;
-        unsafe {
-            OVERSHOOT = CYCLES_FULL_REFRESH
-                .saturating_sub(self.run::<true>(CYCLES_FULL_REFRESH - OVERSHOOT));
-        }
+        self.overshoot = CYCLES_FULL_REFRESH
+            .saturating_sub(self.run::<true>(CYCLES_FULL_REFRESH - self.overshoot));
     }
 
     pub fn start_gdbserver(&mut self, port: u16) {
@@ -360,9 +359,7 @@ impl GameBoyAdvance {
                 <= unsafe { self.scheduler.timestamp_of_next_event_unchecked() }
             {
                 self.single_step();
-                if CHECK_BREAKPOINTS
-                    && let Some(bp) = self.cpu.check_breakpoint()
-                {
+                if CHECK_BREAKPOINTS && let Some(bp) = self.cpu.check_breakpoint() {
                     debug!("Arm7tdmi breakpoint hit 0x{:08x}", bp);
                     self.scheduler.cancel_pending(EventType::RunLimitReached);
                     let _ = self.handle_events();
@@ -461,4 +458,3 @@ impl GameBoyAdvance {
         self.cpu.reset();
     }
 }
-
