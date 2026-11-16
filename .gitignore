@@ -1,0 +1,22 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Build web (trunk)
+/crates/gba-app/dist/
+
+# ROMs, BIOS y datos de juego: nunca se versionan
+*.gba
+*.agb
+*.sav
+*.state
+gba_bios.bin
+# ...salvo las ROMs de prueba libres (MIT) del core
+!/vendor/rustboyadvance-ng/external/gba-tests/**/*.gba
+
+# Editores y sistema
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
