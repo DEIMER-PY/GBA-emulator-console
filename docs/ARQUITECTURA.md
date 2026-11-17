@@ -249,6 +249,10 @@ run_frame() ─► audio_samples() ─► push ─► [ cola ] ─► pop ─►
 
 `Config` se serializa con `serde` y se guarda mediante `eframe::Storage` (un archivo RON en la carpeta de datos del usuario; `localStorage` en la web). `eframe` llama a `App::save` periódicamente y al cerrar. Todos los campos tienen valor por defecto, así que una configuración antigua sigue cargando cuando se añaden ajustes nuevos.
 
+### BIOS
+
+`Config::bios_path` guarda la ruta de un volcado propio; `GbaApp::apply_bios` lo lee al arrancar y al cambiarlo, y lo entrega a `Emulator::set_bios`. Si falla (archivo ausente o de otro tamaño) se borra la ruta, se avisa y se sigue con la BIOS incluida: una ruta rota nunca impide arrancar.
+
 ### Ritmo de la emulación
 
 El monitor y la consola no van a la misma frecuencia: un monitor puede ir a 60, 75 o 144 Hz y la GBA a 59,73 fps. `FrameClock` acumula el tiempo real entre repintados y devuelve los frames enteros que caben, guardando la fracción sobrante. Así la velocidad del juego es correcta en cualquier monitor.

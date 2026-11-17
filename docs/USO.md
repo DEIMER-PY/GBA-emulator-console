@@ -163,4 +163,6 @@ cargo run -p gba-app --release
 
 El emulador abre archivos `.gba` (también dentro de un `.zip`). El proyecto no incluye juegos: usa volcados de tus propios cartuchos o juegos homebrew de libre distribución.
 
-No hace falta la BIOS de Nintendo: la app incluye una BIOS libre ([Cult-of-GBA](https://github.com/Cult-of-GBA/BIOS)).
+No hace falta la BIOS de Nintendo: la app incluye una BIOS libre ([Cult-of-GBA](https://github.com/Cult-of-GBA/BIOS)), suficiente para la mayoría de juegos.
+
+Si un juego falla con ella, se puede usar un volcado de la BIOS original de tu propia consola (un archivo de 16 KiB) en **Archivo → Ajustes… → Consola → Elegir BIOS…**. La ruta se recuerda, y el cambio se aplica al cargar un juego o al apagar y encender (`Ctrl+Shift+R`). **Usar la incluida** vuelve a la BIOS libre. Si el archivo deja de existir o no tiene el tamaño de una BIOS, la app avisa y usa la incluida. En la versión web solo está disponible la BIOS incluida.
