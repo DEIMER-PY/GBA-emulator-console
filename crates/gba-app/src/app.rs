@@ -154,6 +154,9 @@ pub struct GbaApp {
 impl GbaApp {
     /// Crea la app. Carga `initial_rom` si se indica; si no, muestra la pantalla de inicio.
     pub fn new(cc: &eframe::CreationContext<'_>, initial_rom: Option<PathBuf>) -> Self {
+        // La imagen del juego va sobre negro: la interfaz usa siempre el tema oscuro,
+        // también si el sistema o el navegador prefieren el claro.
+        cc.egui_ctx.set_theme(egui::Theme::Dark);
         let mut app = Self {
             emulator: Emulator::new(),
             screen: Screen::default(),

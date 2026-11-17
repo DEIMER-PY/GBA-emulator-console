@@ -4,8 +4,8 @@ Emulador de **Game Boy Advance** escrito en Rust, para escritorio y web. Es el s
 (NES → GBA → Nintendo DS): continúa el trabajo de [replica-NES](https://github.com/DEIMER-PY/replica-NES)
 y prepara el terreno para la DS, que reutiliza la misma CPU (ARM7TDMI).
 
-> **Estado:** la app de escritorio funciona (imagen, sonido, controles, save states y partidas). Falta
-> probarla con juegos comerciales y la versión web. Ver [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Estado:** la app funciona en escritorio y en el navegador (imagen, sonido, controles, save states y
+> partidas). Falta probarla con juegos comerciales. Ver [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Qué hay
 
@@ -36,6 +36,7 @@ Todo lo demás está en [docs/USO.md](docs/USO.md).
 | Documento | Contenido |
 |---|---|
 | [docs/USO.md](docs/USO.md) | Cómo usar la app: cargar juegos, controles, guardado, sonido e imagen |
+| [docs/WEB.md](docs/WEB.md) | Versión web: compilar con `trunk`, diferencias con el escritorio |
 | [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) | Capas, API de `gba-core`, funcionamiento de la app, decisiones de diseño |
 | [docs/REFERENCIAS.md](docs/REFERENCIAS.md) | Cores, tests, documentación y herramientas evaluados; por qué se eligió cada uno |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Qué está hecho, qué falta y el plan hacia la Nintendo DS |

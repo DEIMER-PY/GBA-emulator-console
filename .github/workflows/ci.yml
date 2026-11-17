@@ -32,6 +32,19 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
 
+  web:
+    name: wasm (clippy + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy -p gba-app --target wasm32-unknown-unknown -- -D warnings
+      - run: cargo build -p gba-app --target wasm32-unknown-unknown --release
+
   vendor-core:
     name: tests del core de terceros (gba-tests)
     runs-on: ubuntu-latest

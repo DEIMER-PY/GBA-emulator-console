@@ -39,5 +39,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             fps / FRAME_RATE
         );
     }
+    println!(
+        "{:>15}: {} KiB",
+        "save state",
+        gba.save_state()?.len() / 1024
+    );
     Ok(())
 }

@@ -9,7 +9,7 @@ Cada fila es una rama que se integra en `develop` con su pull request.
 | ✅ | `chore/vendor-core` | Core de rustboyadvance-ng copiado y parcheado en `vendor/` |
 | ✅ | `feature/core-api` | Workspace, `Emulator` de `gba-core` con tests headless, benchmark, CI y documentación base |
 | ✅ | `feature/desktop-app` | App de escritorio: ventana, carga de ROM, teclado y mandos, sonido estéreo, pausa, reset, avance rápido, save states, partidas, ajustes y pantalla de inicio |
-| ⬜ | `feature/web-wasm` | Versión web con `trunk` (el código está portado; falta compilarlo y probarlo) |
+| ✅ | `feature/web-wasm` | Versión web con `trunk` |
 | ⬜ | `feature/bios-setting` | Elegir un volcado propio de la BIOS desde los ajustes |
 | ⬜ | `chore/release-v0.1.0` | Workflow de ejecutables y publicación |
 
@@ -27,6 +27,8 @@ El core se verificó con la ROM de demostración y con `gba-tests`; la app, abri
 
 ## Más adelante (GBA)
 
+- Save states de la web en IndexedDB en lugar de `localStorage` (hoy solo caben unos cuatro).
+- Publicar la versión web en GitHub Pages (requiere repositorio público o plan de pago).
 - Incorporar [mgba-emu/suite](https://github.com/mgba-emu/suite) a los tests.
 - Rebobinado y filtros de imagen (corrección de color de la pantalla LCD).
 - Visores de depuración: CPU, tiles, paletas, sprites.

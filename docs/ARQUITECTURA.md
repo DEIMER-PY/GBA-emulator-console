@@ -133,8 +133,8 @@ Portada de `nes-app` ([replica-NES](https://github.com/DEIMER-PY/replica-NES)). 
 | `config.rs` | `Config`: ajustes persistentes, guardados con el almacenamiento de `eframe` |
 | `audio.rs` | `AudioOutput`: salida de sonido con `cpal` y cola de muestras |
 | `settings.rs` | Ventana de ajustes (controles, vídeo, audio) y reasignación de teclas |
-| `storage_web.rs` | Versión web de `SaveStore`, sobre `localStorage` (web aún sin verificar) |
-| `web.rs` | Solo web: `RomInbox`, lectura asíncrona de ROMs (web aún sin verificar) |
+| `storage_web.rs` | Versión web de `SaveStore`, sobre `localStorage` (ver [WEB.md](WEB.md)) |
+| `web.rs` | Solo web: `RomInbox`, lectura asíncrona de ROMs (ver [WEB.md](WEB.md)) |
 | `storage.rs` | `SaveStore`: partidas con batería y save states en disco |
 | `input.rs` | `KeyBindings` (teclado), `PadBindings` y `Gamepads` (mandos con `gilrs`) y `PadState` (botones pulsados) |
 
