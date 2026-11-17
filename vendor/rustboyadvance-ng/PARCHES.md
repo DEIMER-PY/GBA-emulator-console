@@ -17,6 +17,8 @@ Todos están marcados en el código con `PARCHE gba-emulator-console`.
 | `core/src/cartridge/backup/eeprom.rs`, `flash.rs`, `core/src/cartridge/mod.rs`, `core/src/gba.rs` | `backup_bytes()` / `load_backup_bytes()`: partida guardada como bytes. |
 | `core/src/sound/dsp.rs`, `core/src/sound/mod.rs`, `core/src/gba.rs` | `set_audio_sample_rate()`: cambiar la frecuencia de salida en caliente. |
 | `core/src/gba.rs` | El desfase de ciclos entre frames pasa de una `static mut` global a un campo de `GameBoyAdvance`: varias consolas (o tests en paralelo) ya no se pisan. |
+| `core/src/cartridge/mod.rs` | La memoria de guardado se comporta como un bus de 8 bits: leer 16 o 32 bits repite el byte, escribirlos guarda un solo byte, y sin memoria de guardado se lee `0xFF`. |
+| `core/src/gba_tests.rs` | Tests añadidos con la BIOS libre: guardado SRAM, Flash 64K y 128K, cartucho sin guardado, y la suite ARM. Queda documentado un límite conocido: escrituras anchas no alineadas en la memoria de guardado. |
 | `rustfmt.toml` (nuevo) | Desactiva `cargo fmt` en esta carpeta para conservar el formato original. |
 | `core/Cargo.toml` | Se quita el benchmark de `criterion` (no se copia `benches/`). |
 
