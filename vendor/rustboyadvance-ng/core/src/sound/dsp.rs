@@ -19,7 +19,9 @@ pub struct CosineResampler {
 
 fn cosine_interpolation(y1: f32, y2: f32, phase: f32) -> f32 {
     let mu2 = (1.0 - (PI * phase).cos()) / 2.0;
-    y2 * (1.0 - mu2) + y1 * mu2
+    // PARCHE gba-emulator-console: el original interpolaba al revés (de `y2` a `y1`),
+    // lo que metía un pico en cada cambio brusco de la señal.
+    y1 * (1.0 - mu2) + y2 * mu2
 }
 
 impl Resampler for CosineResampler {

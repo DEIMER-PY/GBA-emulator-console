@@ -115,7 +115,7 @@ app                         gba-core                 core (vendor)
 
 ### ROM de demostración
 
-`demo_rom()` devuelve un programa ARM de 11 instrucciones ensamblado a mano: pantalla azul con el botón A suelto y roja mientras se mantiene pulsado. Con ella los tests comprueban vídeo, mandos, save states, reset y guardado sin depender de ninguna ROM externa.
+`demo_rom()` devuelve un programa ARM de 25 instrucciones ensamblado a mano: pantalla azul y silencio con el botón A suelto; pantalla roja y un tono de ~440 Hz mientras se mantiene pulsado. Con ella los tests comprueban vídeo, audio, mandos, save states, reset y guardado sin depender de ninguna ROM externa.
 
 ## `gba-app`
 
@@ -243,7 +243,7 @@ run_frame() ─► audio_samples() ─► push ─► [ cola ] ─► pop ─►
 - **Latencia objetivo de 60 ms.** La cola tiene un tope de 150 ms; si se supera se descartan las muestras más antiguas, porque es peor que el sonido se retrase respecto a la imagen.
 - **Control dinámico de velocidad.** El reloj de la pantalla y el de la tarjeta de sonido nunca coinciden exactamente, y sin corregirlo la cola acabaría vaciándose (chasquidos) o llenándose (retraso). Según lo llena que esté la cola, la app emula hasta un 0,5 % más rápido o más lento, que no se percibe.
 - **Sin chasquidos al vaciarse.** Si la cola se queda sin muestras, la salida baja suavemente a silencio en lugar de cortar en seco.
-- **Solo DirectSound.** El core mezcla los dos canales de audio muestreado; los cuatro canales PSG no están implementados.
+- **Seis canales.** El core mezcla los dos canales DirectSound (audio muestreado) y los cuatro PSG heredados de Game Boy. Los PSG se añadieron en este proyecto (`vendor/…/sound/psg.rs`); se muestrean a la frecuencia nativa (32 768 Hz) sin filtro, así que los tonos muy agudos pueden sonar algo ásperos.
 - **El audio es opcional.** Si no se puede abrir el dispositivo, `GbaApp::audio` es `None` y todo lo demás funciona.
 
 ### Configuración persistente

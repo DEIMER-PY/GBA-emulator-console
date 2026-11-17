@@ -14,7 +14,8 @@ Primera versión: emulador de Game Boy Advance para escritorio y web.
 - `vendor/rustboyadvance-ng`: core de emulación de GBA (MIT) copiado en el repo, con las ROMs de prueba `gba-tests`. Todos los cambios respecto al original están en `vendor/rustboyadvance-ng/PARCHES.md`.
 - `gba-core`: `Emulator` con carga de ROM, emulación por frames, imagen RGBA 240×160, audio estéreo, botones, reinicio, save states y partidas guardadas (SRAM, Flash, EEPROM) como bytes.
 - `gba-core`: BIOS libre de Cult-of-GBA incluida, y `set_bios` para usar un volcado propio.
-- `gba-core`: ROM de demostración generada en memoria y 14 tests headless.
+- `gba-core`: ROM de demostración generada en memoria (imagen, tono y botones) y 16 tests headless.
+- Core: **canales de sonido PSG** (dos de onda cuadrada, onda programable y ruido), que el core original no sintetizaba.
 - `gba-core`: ejemplos `bench` (velocidad de emulación y tamaño de un save state) y `dump_demo` (escribe la demo en un archivo).
 - `gba-app`: aplicación portada de replica-NES — ventana con escalado entero, pantalla de inicio con biblioteca y recientes, carga de ROM (menú, arrastrar, línea de comandos), teclado y mandos reasignables con L y R, sonido estéreo, pausa, reinicio, avance rápido, cuatro ranuras de save state, partidas guardadas en disco y ajustes persistentes.
 - `gba-app`: pestaña **Consola** en los ajustes para usar un volcado propio de la BIOS original.
@@ -32,11 +33,13 @@ Primera versión: emulador de Game Boy Advance para escritorio y web.
 ### Corregido
 
 - Core: la memoria de guardado se comporta como un bus de 8 bits (las lecturas de 16 y 32 bits repiten el byte, las escrituras guardan uno solo) y un cartucho sin guardado lee `0xFF`. Detectado al añadir las ROMs de guardado de `gba-tests` a la suite.
+- Core: el resampler de audio interpolaba al revés y añadía un pico en cada transición de la señal; afectaba a todo el sonido. Detectado al medir la frecuencia del tono de la demo.
+- Core: los volúmenes maestros (3 bits) y el volumen PSG (2 bits) se leían con un bit de menos.
 - `gba-app`: la interfaz usa siempre el tema oscuro; con el sistema o el navegador en tema claro, los textos de la pantalla de inicio no se leían.
 
 ### Limitaciones conocidas
 
-- **Sonido incompleto:** el core solo sintetiza los dos canales DirectSound (audio muestreado, que usan la música y las voces de la mayoría de juegos). Los cuatro canales PSG heredados de Game Boy (dos de onda cuadrada, onda programable y ruido) no suenan.
+- Los canales PSG se muestrean sin filtro: los tonos muy agudos pueden sonar ásperos. El sonido no se ha comprobado de oído.
 - Sin probar con juegos comerciales: solo con la ROM de demostración y las ROMs de `gba-tests`.
 - Escrituras de 16 y 32 bits no alineadas en la memoria de guardado (no afecta al acceso byte a byte que usan los juegos).
 - En la web caben unos cuatro save states en total, y un fallo del core cierra la página.

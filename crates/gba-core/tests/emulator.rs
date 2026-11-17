@@ -242,3 +242,50 @@ fn la_partida_guardada_entra_y_sale_como_bytes() {
     gba.load_state(&state).expect("el estado se restaura");
     assert_eq!(gba.battery_ram().as_deref(), Some(save.as_slice()));
 }
+
+/// Canal izquierdo de `frames` frames seguidos.
+fn left_channel(gba: &mut Emulator, frames: usize) -> Vec<f32> {
+    let mut samples = Vec::new();
+    let mut left = Vec::new();
+    for _ in 0..frames {
+        gba.run_frame().expect("el frame se emula");
+        gba.audio_samples(&mut samples);
+        left.extend(samples.iter().step_by(AUDIO_CHANNELS));
+    }
+    left
+}
+
+#[test]
+fn la_demo_calla_con_el_boton_suelto() {
+    let mut gba = booted();
+    let left = left_channel(&mut gba, 30);
+    assert!(left.iter().all(|sample| sample.abs() < 0.001));
+}
+
+#[test]
+fn el_boton_a_hace_sonar_un_tono_de_440_hz() {
+    let mut gba = booted();
+    gba.set_button(Button::A, true);
+    run_frames(&mut gba, 2);
+
+    let left = left_channel(&mut gba, 60);
+    let peak = left
+        .iter()
+        .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+    assert!((0.1..=1.0).contains(&peak), "amplitud: {peak}");
+
+    // Frecuencia: flancos de subida por segundo.
+    let edges = left
+        .windows(2)
+        .filter(|pair| pair[0] < 0.0 && pair[1] >= 0.0)
+        .count();
+    let seconds = left.len() as f64 / f64::from(DEFAULT_SAMPLE_RATE);
+    let hertz = edges as f64 / seconds;
+    assert!((430.0..=450.0).contains(&hertz), "frecuencia: {hertz} Hz");
+
+    // Al soltar el botón vuelve el silencio.
+    gba.set_button(Button::A, false);
+    run_frames(&mut gba, 2);
+    let left = left_channel(&mut gba, 10);
+    assert!(left.iter().all(|sample| sample.abs() < 0.001));
+}

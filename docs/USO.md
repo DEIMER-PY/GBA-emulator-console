@@ -29,7 +29,7 @@ Además, se puede arrastrar un archivo `.gba` a la ventana en cualquier momento:
 
 No hay pantalla de carga porque no hay espera: un juego de GBA ocupa entre 1 y 32 MB y se carga en unos milisegundos.
 
-La **ROM de demostración** es una pantalla azul que pasa a rojo mientras se mantiene el botón A (`X`). Confirma que la emulación, el vídeo y los controles funcionan. No tiene sonido.
+La **ROM de demostración** es una pantalla azul que pasa a rojo, con un tono, mientras se mantiene el botón A (`X`). Confirma que la emulación, el vídeo, los controles y el sonido funcionan.
 
 ## Cargar una ROM
 
@@ -137,7 +137,7 @@ Ambos ajustes se recuerdan. Si no hay ningún dispositivo de audio, la app funci
 
 El sonido es estéreo. Si el dispositivo de salida es mono, los dos canales se mezclan.
 
-> **Limitación:** por ahora solo suenan los canales DirectSound (audio muestreado: la música y las voces de la mayoría de juegos). Los cuatro canales heredados de Game Boy (PSG) no se emulan, así que faltarán algunos efectos de sonido y la música de los juegos que los usan.
+Con la ROM de demostración se puede comprobar: suena un tono mientras se mantiene el botón A.
 
 ## Imagen
 

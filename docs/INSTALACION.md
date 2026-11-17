@@ -126,7 +126,7 @@ Para actualizar más adelante: `git pull` y de nuevo `cargo build -p gba-app --r
 
 ## Comprobar que funciona
 
-Al abrir la app aparece la pantalla de inicio. Pulsa **Probar la demo**: carga una ROM de demostración propia y la pantalla se ve azul. Al mantener la tecla `X` (botón A) pasa a rojo. Con eso quedan comprobados el vídeo y los controles (la demo no tiene sonido). El resto de teclas y funciones está en [USO.md](USO.md).
+Al abrir la app aparece la pantalla de inicio. Pulsa **Probar la demo**: carga una ROM de demostración propia y la pantalla se ve azul. Al mantener la tecla `X` (botón A) pasa a rojo y suena un tono. Con eso quedan comprobados el vídeo, los controles y el sonido. El resto de teclas y funciones está en [USO.md](USO.md).
 
 ## Dónde conseguir ROMs
 
