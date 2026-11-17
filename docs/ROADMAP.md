@@ -8,25 +8,22 @@ Cada fila es una rama que se integra en `develop` con su pull request.
 |---|---|---|
 | ✅ | `chore/vendor-core` | Core de rustboyadvance-ng copiado y parcheado en `vendor/` |
 | ✅ | `feature/core-api` | Workspace, `Emulator` de `gba-core` con tests headless, benchmark, CI y documentación base |
-| ⬜ | `feature/video-window` | Ventana con la imagen del juego, escalado entero y ~59,73 FPS |
-| ⬜ | `feature/rom-loading` | Abrir ROM: menú, arrastrar y soltar, CLI, recientes |
-| ⬜ | `feature/input` | Teclado y mandos (10 botones, con L y R) |
-| ⬜ | `feature/audio` | Salida de sonido estéreo, volumen y silencio |
-| ⬜ | `feature/emulation-controls` | Pausa, reset, avance rápido, save states, partidas guardadas |
-| ⬜ | `feature/settings` | Ajustes: teclas, escala, pantalla completa, BIOS propia; persistencia |
-| ⬜ | `feature/home-screen` | Pantalla de inicio con biblioteca de juegos |
-| ⬜ | `feature/web-wasm` | Versión web con `trunk` |
+| ✅ | `feature/desktop-app` | App de escritorio: ventana, carga de ROM, teclado y mandos, sonido estéreo, pausa, reset, avance rápido, save states, partidas, ajustes y pantalla de inicio |
+| ⬜ | `feature/web-wasm` | Versión web con `trunk` (el código está portado; falta compilarlo y probarlo) |
+| ⬜ | `feature/bios-setting` | Elegir un volcado propio de la BIOS desde los ajustes |
+| ⬜ | `chore/release-v0.1.0` | Workflow de ejecutables y publicación |
 
-Las ramas de la app portan el código de [replica-NES](https://github.com/DEIMER-PY/replica-NES) (`nes-app`), adaptado a las diferencias de la GBA descritas en [ARQUITECTURA.md](ARQUITECTURA.md).
+La app se portó de una vez desde [replica-NES](https://github.com/DEIMER-PY/replica-NES) (`nes-app`), adaptada a las diferencias de la GBA descritas en [ARQUITECTURA.md](ARQUITECTURA.md), en lugar de repetir rama a rama el camino de la NES.
 
 ## Pendiente de validar
 
-Lo hecho hasta ahora se verificó con la ROM de demostración del proyecto y con `gba-tests`. Falta:
+El core se verificó con la ROM de demostración y con `gba-tests`; la app, abriendo `ppu/hello.gba` de `gba-tests` y comprobando la imagen en la ventana. Falta:
 
 - Juegos comerciales u homebrew reales: imagen, sonido y guardado (SRAM, Flash, EEPROM).
 - Sonido: comprobar de oído los canales PSG y DirectSound frente a mGBA.
 - El resto de `gba-tests` (`ppu`, `save`, `bios` con BIOS original) y la suite de mGBA.
-- Compilación del core a WebAssembly dentro de este workspace.
+- Mandos físicos, diálogos de archivo, arrastrar y soltar y pantalla completa en la app.
+- Linux y macOS (la CI compila y pasa los tests en Linux, pero la app no se ha ejecutado allí).
 
 ## Más adelante (GBA)
 

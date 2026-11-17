@@ -8,11 +8,16 @@
 | C++ Build Tools (Windows) | Enlazador MSVC | Visual Studio Installer → "Desarrollo para el escritorio con C++" |
 | `gh` | Pull requests desde la terminal | `winget install GitHub.cli` |
 
+En Linux hacen falta además las librerías de sistema que usa la CI (ver `.github/workflows/ci.yml`).
+
 Si `cargo` no se reconoce en la terminal, añade `%USERPROFILE%\.cargoin` al `PATH`.
 
 ## Comandos habituales
 
 ```sh
+cargo run -p gba-app                 # ejecutar la app (desarrollo)
+cargo run -p gba-app --release       # ejecutar optimizada
+cargo build -p gba-app --release     # generar el ejecutable: target/release/gba-app(.exe)
 cargo test --workspace               # tests del código propio
 cargo fmt --all                      # formatear
 cargo clippy --workspace --all-targets -- -D warnings   # lints
