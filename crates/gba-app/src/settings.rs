@@ -15,6 +15,7 @@ pub enum Tab {
     Controls,
     Video,
     Audio,
+    Console,
 }
 
 /// Estado de la ventana de ajustes (no se guarda entre sesiones).
@@ -96,12 +97,16 @@ impl GbaApp {
                     ui.selectable_value(tab, Tab::Controls, "Controles");
                     ui.selectable_value(tab, Tab::Video, "Vídeo");
                     ui.selectable_value(tab, Tab::Audio, "Audio");
+                    // La BIOS propia es un archivo del disco, que en la web no existe.
+                    #[cfg(not(target_arch = "wasm32"))]
+                    ui.selectable_value(tab, Tab::Console, "Consola");
                 });
                 ui.separator();
                 match self.settings.tab {
                     Tab::Controls => self.controls_tab(ui),
                     Tab::Video => self.video_tab(ui),
                     Tab::Audio => self.audio_controls(ui),
+                    Tab::Console => self.console_tab(ui),
                 }
             });
 
@@ -281,6 +286,41 @@ impl GbaApp {
             self.config.pad_bindings = PadBindings::default();
             self.settings.capturing = None;
         }
+    }
+
+    /// BIOS en uso y botones para cambiarla.
+    fn console_tab(&mut self, ui: &mut egui::Ui) {
+        ui.strong("BIOS");
+        match &self.config.bios_path {
+            Some(path) => {
+                ui.label("Volcado propio:");
+                ui.weak(path.display().to_string());
+            }
+            None => {
+                ui.label("BIOS libre incluida (Cult-of-GBA).");
+            }
+        }
+        ui.add_space(4.0);
+        ui.horizontal(|ui| {
+            if ui.button("Elegir BIOS…").clicked() {
+                let ctx = ui.ctx().clone();
+                self.perform(&ctx, Action::ChooseBios);
+            }
+            let custom = self.config.bios_path.is_some();
+            if ui
+                .add_enabled(custom, egui::Button::new("Usar la incluida"))
+                .clicked()
+            {
+                let ctx = ui.ctx().clone();
+                self.perform(&ctx, Action::UseOpenBios);
+            }
+        });
+        ui.add_space(4.0);
+        ui.weak(
+            "La BIOS incluida basta para la mayoría de juegos. Un volcado de la BIOS \
+             original de tu consola (16 KiB) da la máxima compatibilidad. El cambio se \
+             aplica al cargar un juego o al apagar y encender.",
+        );
     }
 
     fn video_tab(&mut self, ui: &mut egui::Ui) {
