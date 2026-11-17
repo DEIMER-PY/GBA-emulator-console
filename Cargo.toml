@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/gba-core"]
+members = ["crates/gba-core", "crates/gba-app"]
 # El core de terceros se compila como dependencia, pero no forma parte del workspace:
 # así `cargo clippy`/`cargo fmt`/`cargo test` solo actúan sobre el código propio.
 exclude = ["vendor"]
