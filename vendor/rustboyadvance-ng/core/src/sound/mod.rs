@@ -13,6 +13,10 @@ pub use interface::{AudioInterface, DynAudioInterface, StereoSample};
 mod dsp;
 use dsp::{CosineResampler, Resampler};
 
+// PARCHE gba-emulator-console: canales PSG (ver psg.rs).
+mod psg;
+use psg::Psg;
+
 const DMG_RATIOS: [f32; 4] = [0.25, 0.5, 1.0, 0.0];
 const DMA_TIMERS: [usize; 2] = [0, 1];
 const DUTY_RATIOS: [f32; 4] = [0.125, 0.25, 0.5, 0.75];
@@ -92,6 +96,9 @@ pub struct SoundController {
 
     dma_sound: [DmaSoundChannel; 2],
 
+    // PARCHE gba-emulator-console: canales PSG.
+    psg: Psg,
+
     resampler: CosineResampler,
     output_buffer: Vec<StereoSample<f32>>,
 }
@@ -127,6 +134,7 @@ impl SoundController {
             sound_bias: 0x200,
             sample_rate: 32_768f32,
             dma_sound: [Default::default(), Default::default()],
+            psg: Psg::default(),
 
             resampler,
             output_buffer: Vec::with_capacity(1024),
@@ -145,8 +153,12 @@ impl SoundController {
         //     io_addr,
         //     value
         // );
+        // PARCHE gba-emulator-console: registros de los canales PSG.
+        if Psg::handles(io_addr) {
+            return self.psg.read(io_addr);
+        }
         match io_addr {
-            REG_SOUNDCNT_X => cbit(7, self.mse),
+            REG_SOUNDCNT_X => cbit(7, self.mse) | self.psg.status(),
             REG_SOUNDCNT_L => {
                 self.left_volume as u16
                     | (self.right_volume as u16) << 4
@@ -198,6 +210,8 @@ impl SoundController {
             } else if self.mse {
                 info!("MSE disabled!");
                 self.mse = false;
+                // PARCHE gba-emulator-console: apagar el sonido reinicia los canales PSG.
+                self.psg.power_off();
             }
 
             // other fields of this register are read-only anyway, ignore them.
@@ -210,10 +224,17 @@ impl SoundController {
         //     return;
         // }
 
+        // PARCHE gba-emulator-console: registros de los canales PSG.
+        if Psg::handles(io_addr) {
+            self.psg.write(io_addr, value);
+            return;
+        }
+
         match io_addr {
             REG_SOUNDCNT_L => {
-                self.left_volume = value.bit_range(0..2) as usize;
-                self.right_volume = value.bit_range(4..6) as usize;
+                // PARCHE gba-emulator-console: los volúmenes son de 3 bits (antes 2).
+                self.left_volume = value.bit_range(0..3) as usize;
+                self.right_volume = value.bit_range(4..7) as usize;
                 self.left_sqr1 = value.bit(8);
                 self.left_sqr2 = value.bit(9);
                 self.left_wave = value.bit(10);
@@ -225,7 +246,8 @@ impl SoundController {
             }
 
             REG_SOUNDCNT_H => {
-                self.dmg_volume_ratio = DMG_RATIOS[value.bit_range(0..1) as usize];
+                // PARCHE gba-emulator-console: el volumen PSG es de 2 bits (antes 1).
+                self.dmg_volume_ratio = DMG_RATIOS[value.bit_range(0..2) as usize];
                 self.dma_sound[0].volume_shift = value.bit(2) as i16;
                 self.dma_sound[1].volume_shift = value.bit(3) as i16;
                 self.dma_sound[0].enable_right = value.bit(8);
@@ -323,8 +345,33 @@ impl SoundController {
     fn on_sample(&mut self, audio_device: &mut DynAudioInterface) -> FutureEvent {
         let mut sample = [0f32, 0f32];
 
+        // PARCHE gba-emulator-console: mezcla de los canales PSG. Cada canal da de -15
+        // a 15, que a volumen máximo equivale a ±128 en la salida de 10 bits.
+        self.psg.advance(self.cycles_per_sample);
+        let psg_outputs = if self.mse { self.psg.outputs() } else { [0; 4] };
+        let psg_routing = [
+            (
+                self.left_volume,
+                [self.left_sqr1, self.left_sqr2, self.left_wave, self.left_noise],
+            ),
+            (
+                self.right_volume,
+                [self.right_sqr1, self.right_sqr2, self.right_wave, self.right_noise],
+            ),
+        ];
+
         for (channel, out_sample) in sample.iter_mut().enumerate() {
-            let mut dma_sample = 0;
+            let (psg_volume, psg_enabled) = psg_routing[channel];
+            let psg_sum: i32 = psg_outputs
+                .iter()
+                .zip(psg_enabled)
+                .filter(|(_, enabled)| *enabled)
+                .map(|(output, _)| *output)
+                .sum();
+            let psg_sample = psg_sum as f32 * (128.0 / 15.0) * ((psg_volume + 1) as f32 / 8.0)
+                * self.dmg_volume_ratio;
+
+            let mut dma_sample = psg_sample.round() as i16;
             for dma in &mut self.dma_sound {
                 if dma.is_stereo_channel_enabled(channel) {
                     let value = dma.value as i16;
