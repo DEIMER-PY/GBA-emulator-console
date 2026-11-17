@@ -137,6 +137,8 @@ Ambos ajustes se recuerdan. Si no hay ningún dispositivo de audio, la app funci
 
 El sonido es estéreo. Si el dispositivo de salida es mono, los dos canales se mezclan.
 
+> **Limitación:** por ahora solo suenan los canales DirectSound (audio muestreado: la música y las voces de la mayoría de juegos). Los cuatro canales heredados de Game Boy (PSG) no se emulan, así que faltarán algunos efectos de sonido y la música de los juegos que los usan.
+
 ## Imagen
 
 La imagen se centra y se escala al redimensionar la ventana. Las opciones están en el menú **Ver** y en **Ajustes… → Vídeo**:

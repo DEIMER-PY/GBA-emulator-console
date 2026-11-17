@@ -19,7 +19,7 @@ La emulación la aporta un core existente ([rustboyadvance-ng](https://github.co
                        │
 ┌──────────────────────┴──────────────────────┐
 │ vendor/rustboyadvance-ng  (terceros, MIT)   │
-│  core:     PPU, APU, DMA, timers, cartucho  │
+│  core:     PPU, audio, DMA, timers, cartucho│
 │  arm7tdmi: CPU ARM7TDMI (ARM + Thumb)       │
 │  utils:    utilidades compartidas           │
 └─────────────────────────────────────────────┘
@@ -243,6 +243,7 @@ run_frame() ─► audio_samples() ─► push ─► [ cola ] ─► pop ─►
 - **Latencia objetivo de 60 ms.** La cola tiene un tope de 150 ms; si se supera se descartan las muestras más antiguas, porque es peor que el sonido se retrase respecto a la imagen.
 - **Control dinámico de velocidad.** El reloj de la pantalla y el de la tarjeta de sonido nunca coinciden exactamente, y sin corregirlo la cola acabaría vaciándose (chasquidos) o llenándose (retraso). Según lo llena que esté la cola, la app emula hasta un 0,5 % más rápido o más lento, que no se percibe.
 - **Sin chasquidos al vaciarse.** Si la cola se queda sin muestras, la salida baja suavemente a silencio en lugar de cortar en seco.
+- **Solo DirectSound.** El core mezcla los dos canales de audio muestreado; los cuatro canales PSG no están implementados.
 - **El audio es opcional.** Si no se puede abrir el dispositivo, `GbaApp::audio` es `None` y todo lo demás funciona.
 
 ### Configuración persistente
@@ -269,6 +270,6 @@ Si la app se retrasa más de 3 frames (ventana minimizada, tirón del sistema), 
 |---|---|---|
 | `crates/gba-core/tests` | La API propia, con la ROM de demostración | `cargo test --workspace` |
 | `crates/gba-app/src` (tests unitarios) | Controles, cola de audio, escalado, reloj, configuración, biblioteca y guardado | `cargo test --workspace` |
-| `vendor/rustboyadvance-ng/core` | CPU ARM/Thumb y memoria con [gba-tests](https://github.com/jsmolka/gba-tests); EEPROM, RTC, planificador | `cargo test --release` dentro de esa carpeta |
+| `vendor/rustboyadvance-ng/core` | CPU ARM/Thumb, memoria y guardado (SRAM, Flash) con [gba-tests](https://github.com/jsmolka/gba-tests); EEPROM, RTC, planificador | `cargo test --release` dentro de esa carpeta |
 
 La CI ejecuta ambos.

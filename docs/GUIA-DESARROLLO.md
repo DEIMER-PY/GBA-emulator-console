@@ -55,7 +55,7 @@ feature/* ← una rama por funcionalidad, sale de develop y vuelve a develop
 5. Con la CI en verde, merge a `develop` (merge commit, se conserva el historial de la feature).
 6. Para publicar: PR de `develop` a `main` y tag `vX.Y.Z`.
 
-Los PR los fusiona el propietario del repositorio.
+Al subir el tag, el workflow `.github/workflows/release.yml` compila los ejecutables de Windows y Linux y los adjunta a la release de GitHub (`GBA-emulator-console-vX.Y.Z-windows-x64.exe`, `GBA-emulator-console-vX.Y.Z-linux-x64`).
 
 Prefijos de rama: `feature/`, `fix/`, `docs/`, `chore/`, `refactor/`.
 
