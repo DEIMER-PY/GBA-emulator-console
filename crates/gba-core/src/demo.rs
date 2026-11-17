@@ -7,26 +7,54 @@
 ///         mov   r1, #0x05000000   ; paleta
 ///         mov   r2, #0
 ///         strh  r2, [r0]          ; DISPCNT = 0: modo 0 sin fondos (solo color de fondo)
+///         mov   r2, #0x80
+///         strh  r2, [r0, #0x84]   ; SOUNDCNT_X: sonido encendido
+///         mov   r2, #2
+///         strh  r2, [r0, #0x82]   ; SOUNDCNT_H: canales PSG al 100 %
+///         mov   r2, #0xF000
+///         orr   r2, r2, #0x80
+///         strh  r2, [r0, #0x68]   ; SOUND2CNT_L: volumen 15, onda cuadrada al 50 %
+///         mov   r2, #0x8600
+///         orr   r2, r2, #0xD6
+///         strh  r2, [r0, #0x6C]   ; SOUND2CNT_H: ~440 Hz y disparo del canal 2
 /// loop:   add   r3, r0, #0x130    ; KEYINPUT
 ///         ldrh  r2, [r3]
 ///         tst   r2, #1            ; bit 0 = botón A (0 = pulsado)
 ///         moveq r4, #0x001F       ; pulsado: rojo
 ///         movne r4, #0x7C00       ; suelto: azul
 ///         strh  r4, [r1]          ; color 0 de la paleta
+///         moveq r5, #0x2200       ; pulsado: canal 2 a los dos altavoces
+///         movne r5, #0            ; suelto: a ninguno
+///         orr   r5, r5, #0x77     ; volumen maestro al máximo
+///         strh  r5, [r0, #0x80]   ; SOUNDCNT_L
 ///         b     loop
 /// ```
-const PROGRAM: [u32; 11] = [
+const PROGRAM: [u32; 25] = [
     0xE3A0_0301,
     0xE3A0_1405,
     0xE3A0_2000,
     0xE1C0_20B0,
+    0xE3A0_2080,
+    0xE1C0_28B4,
+    0xE3A0_2002,
+    0xE1C0_28B2,
+    0xE3A0_2A0F,
+    0xE382_2080,
+    0xE1C0_26B8,
+    0xE3A0_2C86,
+    0xE382_20D6,
+    0xE1C0_26BC,
     0xE280_3F4C,
     0xE1D3_20B0,
     0xE312_0001,
     0x03A0_401F,
     0x13A0_4B1F,
     0xE1C1_40B0,
-    0xEAFF_FFF8,
+    0x03A0_5C22,
+    0x13A0_5000,
+    0xE385_5077,
+    0xE1C0_58B0,
+    0xEAFF_FFF4,
 ];
 
 /// Tamaño de la cabecera de un cartucho de GBA.
@@ -34,9 +62,9 @@ const HEADER_SIZE: usize = 0xC0;
 
 /// Devuelve una ROM de GBA mínima generada en memoria.
 ///
-/// Pinta la pantalla de azul con el botón A suelto y de rojo mientras se mantiene
-/// pulsado. Con ella los tests comprueban vídeo, mandos, save states y reset sin
-/// depender de ninguna ROM externa.
+/// Pantalla azul y silencio con el botón A suelto; pantalla roja y un tono de ~440 Hz
+/// mientras se mantiene pulsado. Con ella los tests comprueban vídeo, audio, mandos,
+/// save states y reset sin depender de ninguna ROM externa.
 #[must_use]
 pub fn demo_rom() -> Vec<u8> {
     let mut rom = vec![0u8; HEADER_SIZE];
