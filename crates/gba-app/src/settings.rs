@@ -317,9 +317,9 @@ impl GbaApp {
         });
         ui.add_space(4.0);
         ui.weak(
-            "La BIOS incluida basta para la mayoría de juegos. Un volcado de la BIOS \
-             original de tu consola (16 KiB) da la máxima compatibilidad. El cambio se \
-             aplica al cargar un juego o al apagar y encender.",
+            "La BIOS incluida es una reimplementación libre, no la de Nintendo. Si un \
+             juego falla, prueba con un volcado de la BIOS original de tu consola \
+             (16 KiB). El cambio se aplica al cargar un juego o al apagar y encender.",
         );
     }
 
