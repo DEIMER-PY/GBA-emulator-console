@@ -16,6 +16,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `docs/USO.md`: guía de uso de la app.
 - Versión web: la app se compila a WebAssembly con `trunk` (`docs/WEB.md`); la CI comprueba ese target.
 - `gba-core`: el ejemplo `bench` informa también del tamaño de un save state.
+- `gba-app`: pestaña **Consola** en los ajustes para usar un volcado propio de la BIOS original.
 
 ### Corregido
 

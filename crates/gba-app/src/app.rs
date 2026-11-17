@@ -39,6 +39,9 @@ const MAX_RATE_CORRECTION: f64 = 0.005;
 /// Cada cuánto se repinta la ventana cuando no se está emulando (pausa o sin juego).
 const IDLE_REPAINT: std::time::Duration = std::time::Duration::from_millis(50);
 
+/// Aviso tras cambiar de BIOS: la consola ya encendida sigue con la anterior.
+const BIOS_CHANGED: &str = "BIOS cambiada: se usará al cargar un juego o al apagar y encender";
+
 /// Segundos que permanece en pantalla un aviso.
 const TOAST_SECONDS: f64 = 2.0;
 
@@ -50,6 +53,10 @@ pub enum Action {
     ChooseRomDir,
     /// Volver a leer la carpeta de juegos.
     RefreshLibrary,
+    /// Elegir un volcado de la BIOS original.
+    ChooseBios,
+    /// Volver a la BIOS libre incluida.
+    UseOpenBios,
     LoadDemo,
     CloseRom,
     Quit,
@@ -184,6 +191,7 @@ impl GbaApp {
         // primera pulsación del usuario: los navegadores bloquean el audio hasta entonces.
         #[cfg(not(target_arch = "wasm32"))]
         app.open_audio();
+        app.apply_bios();
         app.refresh_library();
         // Sin ROM en la línea de comandos se arranca en la pantalla de inicio.
         if let Some(path) = initial_rom {
@@ -198,6 +206,12 @@ impl GbaApp {
             Action::OpenRom => self.open_dialog(ctx),
             Action::ChooseRomDir => self.choose_rom_dir(),
             Action::RefreshLibrary => self.refresh_library(),
+            Action::ChooseBios => self.choose_bios(ctx),
+            Action::UseOpenBios => {
+                self.config.bios_path = None;
+                self.apply_bios();
+                self.notify(ctx, BIOS_CHANGED);
+            }
             Action::LoadDemo => {
                 let demo = RomFile::from_bytes("demo.gba", gba_core::demo_rom());
                 self.load_rom(ctx, &demo);
@@ -355,6 +369,46 @@ impl GbaApp {
     /// En la web no hay carpetas: el navegador solo entrega archivos sueltos.
     #[cfg(target_arch = "wasm32")]
     fn choose_rom_dir(&mut self) {}
+
+    /// Muestra el diálogo del sistema para elegir un volcado de la BIOS.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn choose_bios(&mut self, ctx: &egui::Context) {
+        let picked = rfd::FileDialog::new()
+            .set_title("BIOS de Game Boy Advance")
+            .add_filter("BIOS de GBA", &["bin", "bios", "rom"])
+            .add_filter("Todos los archivos", &["*"])
+            .pick_file();
+        if let Some(path) = picked {
+            self.config.bios_path = Some(path);
+            self.apply_bios();
+            if self.config.bios_path.is_some() {
+                self.notify(ctx, BIOS_CHANGED);
+            }
+        }
+    }
+
+    /// En la web no hay rutas de disco que recordar: se usa siempre la BIOS incluida.
+    #[cfg(target_arch = "wasm32")]
+    fn choose_bios(&mut self, _ctx: &egui::Context) {}
+
+    /// Entrega al emulador la BIOS configurada. Si el archivo no se puede leer o no es
+    /// una BIOS, se avisa y se vuelve a la incluida.
+    fn apply_bios(&mut self) {
+        self.emulator.use_open_bios();
+        let Some(path) = self.config.bios_path.clone() else {
+            return;
+        };
+        let loaded = std::fs::read(&path)
+            .map_err(|err| err.to_string())
+            .and_then(|data| self.emulator.set_bios(&data).map_err(|err| err.to_string()));
+        if let Err(err) = loaded {
+            self.config.bios_path = None;
+            self.error = Some(format!(
+                "No se pudo usar la BIOS {}: {err}. Se usará la BIOS incluida.",
+                path.display()
+            ));
+        }
+    }
 
     /// Vuelve a leer la carpeta de juegos.
     fn refresh_library(&mut self) {

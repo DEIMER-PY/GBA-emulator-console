@@ -22,6 +22,8 @@ pub struct Config {
     pub recent_roms: RecentRoms,
     /// Carpeta de juegos que se lista en la pantalla de inicio.
     pub rom_dir: Option<std::path::PathBuf>,
+    /// Volcado de la BIOS original elegido por el usuario; `None` usa la BIOS libre incluida.
+    pub bios_path: Option<std::path::PathBuf>,
     /// Escalar la imagen solo en múltiplos enteros.
     pub integer_scaling: bool,
     /// Teclas asignadas a los botones de la GBA.
@@ -39,6 +41,7 @@ impl Default for Config {
         Self {
             recent_roms: RecentRoms::default(),
             rom_dir: None,
+            bios_path: None,
             integer_scaling: true,
             key_bindings: KeyBindings::default(),
             pad_bindings: PadBindings::default(),
