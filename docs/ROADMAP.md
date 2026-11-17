@@ -11,6 +11,7 @@ Cada fila es una rama que se integra en `develop` con su pull request.
 | ✅ | `feature/desktop-app` | App de escritorio: ventana, carga de ROM, teclado y mandos, sonido estéreo, pausa, reset, avance rápido, save states, partidas, ajustes y pantalla de inicio |
 | ✅ | `feature/web-wasm` | Versión web con `trunk` |
 | ✅ | `feature/bios-setting` | Elegir un volcado propio de la BIOS desde los ajustes |
+| ✅ | `feature/psg-audio` | Canales de sonido PSG y corrección del resampler del core |
 | ✅ | `chore/release-v0.1.0` | Workflow de ejecutables y publicación |
 
 La app se portó de una vez desde [replica-NES](https://github.com/DEIMER-PY/replica-NES) (`nes-app`), adaptada a las diferencias de la GBA descritas en [ARQUITECTURA.md](ARQUITECTURA.md), en lugar de repetir rama a rama el camino de la NES.
@@ -20,14 +21,14 @@ La app se portó de una vez desde [replica-NES](https://github.com/DEIMER-PY/rep
 El core se verificó con la ROM de demostración y con `gba-tests`; la app, abriendo `ppu/hello.gba` de `gba-tests` y comprobando la imagen en la ventana. Falta:
 
 - Juegos comerciales u homebrew reales: imagen, sonido y guardado (SRAM, Flash, EEPROM).
-- Sonido: comprobar de oído el audio DirectSound frente a mGBA.
+- Sonido: comprobar de oído frente a mGBA. La frecuencia y la amplitud del tono de la demo se verifican en los tests, pero nadie lo ha escuchado todavía.
 - El resto de `gba-tests` (`ppu`, `save`, `bios` con BIOS original) y la suite de mGBA.
 - Mandos físicos, diálogos de archivo, arrastrar y soltar y pantalla completa en la app.
 - Linux y macOS (la CI compila y pasa los tests en Linux, pero la app no se ha ejecutado allí).
 
 ## Más adelante (GBA)
 
-- **Canales de sonido PSG** (dos de onda cuadrada, onda programable y ruido): el core no los sintetiza. Es la carencia más visible; son además los mismos canales de la Game Boy.
+- Filtrar los canales PSG (hoy se muestrean sin suavizado y los tonos muy agudos producen *aliasing*).
 - Escrituras anchas no alineadas en la memoria de guardado (requiere que la CPU no alinee la dirección antes del bus).
 - Save states de la web en IndexedDB en lugar de `localStorage` (hoy solo caben unos cuatro).
 - Publicar la versión web en GitHub Pages (requiere repositorio público o plan de pago).

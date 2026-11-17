@@ -8,7 +8,7 @@ En replica-NES la emulación la aporta una librería (`tetanes-core`) y el proye
 
 | Candidato | Licencia | Estado | Veredicto |
 |---|---|---|---|
-| [rustboyadvance-ng](https://github.com/michelhe/rustboyadvance-ng) | MIT | 675 ★, activo (ago. 2026), Rust puro, edición 2024 | **Elegido.** CPU en un crate aparte (`arm7tdmi`), PPU, audio DirectSound (sin los canales PSG), DMA, timers, SRAM/Flash/EEPROM, RTC, save states, ya compila a WebAssembly y pasa `gba-tests`. No está en crates.io. |
+| [rustboyadvance-ng](https://github.com/michelhe/rustboyadvance-ng) | MIT | 675 ★, activo (ago. 2026), Rust puro, edición 2024 | **Elegido.** CPU en un crate aparte (`arm7tdmi`), PPU, audio DirectSound (los canales PSG no los traía: se añadieron aquí), DMA, timers, SRAM/Flash/EEPROM, RTC, save states, ya compila a WebAssembly y pasa `gba-tests`. No está en crates.io. |
 | [`tuiba-core`](https://crates.io/crates/tuiba-core) | MIT | 28 ★, muy activo, en crates.io | Descartado: joven (sept. 2026) y sin audio en su descripción. A vigilar. |
 | [`termboy-gba`](https://crates.io/crates/termboy-gba) | MIT | 4 ★, en crates.io | Descartado: muy poco uso, BIOS solo HLE. |
 | [`mgba`](https://crates.io/crates/mgba) / `mgba-sys` | MIT + MPL-2.0 | Bindings a libmgba (C) | Descartado: la máxima precisión, pero exige CMake y un compilador de C, complica la versión web y no deja nada reutilizable para la DS. |
