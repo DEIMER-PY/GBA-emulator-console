@@ -146,7 +146,14 @@ fn run_gba_test(rom: &[u8], result_reg: usize, max_frames: usize) -> GbaTestResu
     const ARM_IDLE: u32 = 0xEAFF_FFFE;
     const THUMB_IDLE: u16 = 0xE7FE;
 
-    let mut gba = make_mock_gba(rom);
+    run_gba(make_mock_gba(rom), result_reg, max_frames)
+}
+
+/// PARCHE gba-emulator-console: el bucle de `run_gba_test`, para una consola ya
+/// construida (otra BIOS, otro tipo de guardado).
+fn run_gba(mut gba: GameBoyAdvance, result_reg: usize, max_frames: usize) -> GbaTestResult {
+    const ARM_IDLE: u32 = 0xEAFF_FFFE;
+    const THUMB_IDLE: u16 = 0xE7FE;
 
     for _ in 0..max_frames {
         gba.frame();
@@ -319,3 +326,84 @@ fn test_gba_tests_nes() {
         }
     }
 }
+
+// ── PARCHE gba-emulator-console: tests añadidos ──────────────────────────────
+
+/// BIOS libre de Cult-of-GBA que distribuye el proyecto.
+const OPEN_BIOS: &[u8] = include_bytes!("../../../../crates/gba-core/bios/cult_of_gba_bios.bin");
+
+/// Consola como la construye `gba-core`: BIOS libre y tipo de guardado autodetectado.
+fn make_app_gba(rom: &[u8]) -> GameBoyAdvance {
+    let cartridge = GamepakBuilder::new()
+        .buffer(rom)
+        .without_backup_to_file()
+        .build()
+        .unwrap();
+    let mut gba = GameBoyAdvance::new(Box::from(OPEN_BIOS), cartridge, NullAudio::new());
+    gba.skip_bios();
+    gba
+}
+
+fn expect_pass(name: &str, rom: &[u8]) {
+    expect_pass_until(name, rom, u32::MAX);
+}
+
+/// Como `expect_pass`, pero admite que la ROM falle a partir del test `known_gap`:
+/// un límite conocido del core, documentado en el test que lo usa.
+fn expect_pass_until(name: &str, rom: &[u8], known_gap: u32) {
+    match run_gba(make_app_gba(rom), 12, 600) {
+        GbaTestResult::Passed => {}
+        GbaTestResult::Failed(n) if n >= known_gap => {}
+        GbaTestResult::Failed(n) => panic!("{name} failed at test {n}"),
+        GbaTestResult::DidNotTerminate { pc } => {
+            panic!("{name} did not reach idle loop (last PC: {pc:#010x})")
+        }
+    }
+}
+
+/// Primer test de las ROMs de guardado que el core no supera: escribir 16 o 32 bits
+/// en una dirección no alineada debe guardar el byte que corresponde a esa posición,
+/// pero la CPU alinea la dirección antes de llegar al cartucho. Lectura y escritura
+/// por bytes, espejos y accesos anchos alineados (tests 1 a 5) sí se comprueban.
+const UNALIGNED_WIDE_STORE: u32 = 6;
+
+#[test]
+fn test_gba_tests_save_sram() {
+    expect_pass_until(
+        "sram.gba",
+        include_bytes!("../../external/gba-tests/save/sram.gba"),
+        UNALIGNED_WIDE_STORE,
+    );
+}
+
+#[test]
+fn test_gba_tests_save_flash64() {
+    expect_pass_until(
+        "flash64.gba",
+        include_bytes!("../../external/gba-tests/save/flash64.gba"),
+        UNALIGNED_WIDE_STORE,
+    );
+}
+
+#[test]
+fn test_gba_tests_save_flash128() {
+    expect_pass_until(
+        "flash128.gba",
+        include_bytes!("../../external/gba-tests/save/flash128.gba"),
+        UNALIGNED_WIDE_STORE,
+    );
+}
+
+#[test]
+fn test_gba_tests_save_none() {
+    expect_pass("none.gba", include_bytes!("../../external/gba-tests/save/none.gba"));
+}
+
+/// Las pruebas de CPU, con la BIOS libre en lugar de la BIOS mínima sintética.
+#[test]
+fn test_gba_tests_arm_with_open_bios() {
+    expect_pass("arm.gba", include_bytes!("../../external/gba-tests/arm/arm.gba"));
+}
+
+// `bios/bios.gba` no se ejecuta con la BIOS libre: comprueba los valores concretos
+// que deja en el bus la BIOS original de Nintendo, que otra BIOS no puede reproducir.

@@ -123,6 +123,11 @@ use super::sysbus::consts::*;
 
 pub const EEPROM_BASE_ADDR: u32 = 0x0DFF_FF00;
 
+/// PARCHE gba-emulator-console: si la dirección cae en la memoria de guardado.
+fn is_backup_access(addr: u32) -> bool {
+    matches!(addr & 0xff000000, SRAM_LO | SRAM_HI)
+}
+
 fn is_gpio_access(addr: u32) -> bool {
     matches!(
         addr & 0x1ff_ffff,
@@ -137,7 +142,9 @@ impl BusIO for Cartridge {
             SRAM_LO | SRAM_HI => match &self.backup {
                 BackupMedia::Sram(memory) => memory.read((addr & 0x7FFF) as usize),
                 BackupMedia::Flash(flash) => flash.read(addr),
-                _ => 0,
+                // PARCHE gba-emulator-console: sin memoria de guardado el bus devuelve
+                // 0xFF, no 0 (gba-tests save/none).
+                _ => 0xff,
             },
             _ => {
                 if offset >= self.size {
@@ -150,6 +157,11 @@ impl BusIO for Cartridge {
     }
 
     fn read_16(&mut self, addr: u32) -> u16 {
+        // PARCHE gba-emulator-console: la memoria de guardado tiene un bus de 8 bits;
+        // una lectura más ancha repite el mismo byte (gba-tests save/sram, save/flash).
+        if is_backup_access(addr) {
+            return u16::from(self.read_8(addr)) * 0x0101;
+        }
         if is_gpio_access(addr)
             && let Some(gpio) = &self.gpio
         {
@@ -179,7 +191,29 @@ impl BusIO for Cartridge {
         };
     }
 
+    // PARCHE gba-emulator-console: ver `read_16`.
+    fn read_32(&mut self, addr: u32) -> u32 {
+        if is_backup_access(addr) {
+            return u32::from(self.read_8(addr)) * 0x0101_0101;
+        }
+        self.read_16(addr) as u32 | (self.read_16(addr + 2) as u32) << 16
+    }
+
+    // PARCHE gba-emulator-console: una escritura ancha en la memoria de guardado solo
+    // almacena un byte.
+    fn write_32(&mut self, addr: u32, value: u32) {
+        if is_backup_access(addr) {
+            return self.write_8(addr, value as u8);
+        }
+        self.write_16(addr, (value & 0xffff) as u16);
+        self.write_16(addr + 2, (value >> 16) as u16);
+    }
+
     fn write_16(&mut self, addr: u32, value: u16) {
+        // PARCHE gba-emulator-console: ver `write_32`.
+        if is_backup_access(addr) {
+            return self.write_8(addr, value as u8);
+        }
         if is_gpio_access(addr)
             && let Some(gpio) = &mut self.gpio
         {
