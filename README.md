@@ -35,6 +35,7 @@ Todo lo demás está en [docs/USO.md](docs/USO.md).
 
 | Documento | Contenido |
 |---|---|
+| [docs/INSTALACION.md](docs/INSTALACION.md) | Ejecutable o compilación, requisitos y dónde conseguir ROMs |
 | [docs/USO.md](docs/USO.md) | Cómo usar la app: cargar juegos, controles, guardado, sonido e imagen |
 | [docs/WEB.md](docs/WEB.md) | Versión web: compilar con `trunk`, diferencias con el escritorio |
 | [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) | Capas, API de `gba-core`, funcionamiento de la app, decisiones de diseño |
