@@ -5,7 +5,8 @@ Emulador de **Game Boy Advance** escrito en Rust, para escritorio y web. Es el s
 y prepara el terreno para la DS, que reutiliza la misma CPU (ARM7TDMI).
 
 > **Estado:** la app funciona en escritorio y en el navegador (imagen, sonido, controles, save states y
-> partidas). Falta probarla con juegos comerciales. Ver [docs/ROADMAP.md](docs/ROADMAP.md).
+> partidas). Falta probarla con juegos comerciales, y el sonido es parcial: el core aún no emula los
+> canales PSG (ver limitaciones en el [CHANGELOG](CHANGELOG.md)). Ver [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Qué hay
 

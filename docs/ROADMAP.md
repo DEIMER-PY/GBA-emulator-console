@@ -20,13 +20,15 @@ La app se portó de una vez desde [replica-NES](https://github.com/DEIMER-PY/rep
 El core se verificó con la ROM de demostración y con `gba-tests`; la app, abriendo `ppu/hello.gba` de `gba-tests` y comprobando la imagen en la ventana. Falta:
 
 - Juegos comerciales u homebrew reales: imagen, sonido y guardado (SRAM, Flash, EEPROM).
-- Sonido: comprobar de oído los canales PSG y DirectSound frente a mGBA.
+- Sonido: comprobar de oído el audio DirectSound frente a mGBA.
 - El resto de `gba-tests` (`ppu`, `save`, `bios` con BIOS original) y la suite de mGBA.
 - Mandos físicos, diálogos de archivo, arrastrar y soltar y pantalla completa en la app.
 - Linux y macOS (la CI compila y pasa los tests en Linux, pero la app no se ha ejecutado allí).
 
 ## Más adelante (GBA)
 
+- **Canales de sonido PSG** (dos de onda cuadrada, onda programable y ruido): el core no los sintetiza. Es la carencia más visible; son además los mismos canales de la Game Boy.
+- Escrituras anchas no alineadas en la memoria de guardado (requiere que la CPU no alinee la dirección antes del bus).
 - Save states de la web en IndexedDB en lugar de `localStorage` (hoy solo caben unos cuatro).
 - Publicar la versión web en GitHub Pages (requiere repositorio público o plan de pago).
 - Incorporar [mgba-emu/suite](https://github.com/mgba-emu/suite) a los tests.
