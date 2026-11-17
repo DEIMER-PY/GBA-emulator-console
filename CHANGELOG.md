@@ -14,5 +14,11 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `gba-core`: ejemplos `bench` (velocidad de emulación) y `dump_demo` (escribe la demo en un archivo).
 - `gba-app`: aplicación de escritorio portada de replica-NES — ventana con escalado entero, pantalla de inicio con biblioteca y recientes, carga de ROM (menú, arrastrar, línea de comandos), teclado y mandos reasignables con L y R, sonido estéreo, pausa, reinicio, avance rápido, cuatro ranuras de save state, partidas guardadas en disco y ajustes persistentes.
 - `docs/USO.md`: guía de uso de la app.
+- Versión web: la app se compila a WebAssembly con `trunk` (`docs/WEB.md`); la CI comprueba ese target.
+- `gba-core`: el ejemplo `bench` informa también del tamaño de un save state.
+
+### Corregido
+
+- `gba-app`: la interfaz usa siempre el tema oscuro; con el sistema o el navegador en tema claro, los textos de la pantalla de inicio no se leían.
 - CI: formato, lints y tests del código propio, y tests del core de terceros.
 - Documentación: arquitectura, referencias y herramientas, guía de desarrollo y roadmap (GBA y Nintendo DS).
