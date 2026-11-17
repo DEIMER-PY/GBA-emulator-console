@@ -5,6 +5,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+## [0.1.0] - 2026-11-16
+
+Primera versión: emulador de Game Boy Advance para escritorio y web.
+
 ### Añadido
 
 - `vendor/rustboyadvance-ng`: core de emulación de GBA (MIT) copiado en el repo, con parches para guardar partida sin disco, cambiar la frecuencia de audio en marcha y eliminar un estado global. Incluye las ROMs de prueba `gba-tests`.
@@ -17,6 +21,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Versión web: la app se compila a WebAssembly con `trunk` (`docs/WEB.md`); la CI comprueba ese target.
 - `gba-core`: el ejemplo `bench` informa también del tamaño de un save state.
 - `gba-app`: pestaña **Consola** en los ajustes para usar un volcado propio de la BIOS original.
+- CI: workflow `release` que compila los ejecutables de Windows y Linux y los adjunta a la release al subir un tag.
+- `docs/INSTALACION.md`: instalación por sistema operativo, requisitos y dónde conseguir ROMs.
 
 ### Corregido
 

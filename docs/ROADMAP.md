@@ -2,7 +2,7 @@
 
 Cada fila es una rama que se integra en `develop` con su pull request.
 
-## v0.1.0 — en curso
+## v0.1.0 — preparada el 2026-11-16
 
 | Estado | Rama | Funcionalidad |
 |---|---|---|
@@ -11,7 +11,7 @@ Cada fila es una rama que se integra en `develop` con su pull request.
 | ✅ | `feature/desktop-app` | App de escritorio: ventana, carga de ROM, teclado y mandos, sonido estéreo, pausa, reset, avance rápido, save states, partidas, ajustes y pantalla de inicio |
 | ✅ | `feature/web-wasm` | Versión web con `trunk` |
 | ✅ | `feature/bios-setting` | Elegir un volcado propio de la BIOS desde los ajustes |
-| ⬜ | `chore/release-v0.1.0` | Workflow de ejecutables y publicación |
+| ✅ | `chore/release-v0.1.0` | Workflow de ejecutables y publicación |
 
 La app se portó de una vez desde [replica-NES](https://github.com/DEIMER-PY/replica-NES) (`nes-app`), adaptada a las diferencias de la GBA descritas en [ARQUITECTURA.md](ARQUITECTURA.md), en lugar de repetir rama a rama el camino de la NES.
 
