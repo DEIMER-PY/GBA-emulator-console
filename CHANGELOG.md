@@ -5,6 +5,11 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+### Corregido
+
+- **Los juegos no arrancaban en los ejecutables publicados** (Windows y Linux): se colgaban en la primera llamada a la BIOS con «error de emulación». Era un fallo del core que solo aparecía compilado con optimizaciones completas; probado con Sonic Advance 3, Crash Bandicoot: The Huge Adventure, Need for Speed: Most Wanted y Classic NES Series: Super Mario Bros.
+- Una llamada a la BIOS hecha desde la propia BIOS perdía su dirección de retorno.
+
 ## [0.1.0] - 2026-11-16
 
 Primera versión: emulador de Game Boy Advance para escritorio y web.

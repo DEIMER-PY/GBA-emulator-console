@@ -1,10 +1,4 @@
-use super::SysBus;
-use arm7tdmi::{
-    Arm7tdmiCore,
-    memory::{Addr, BusIO, DebugRead},
-};
-
-use rustboyadvance_utils::WeakPointer;
+use arm7tdmi::memory::{Addr, BusIO, DebugRead};
 
 /// Struct representing the sytem ROM
 #[derive(Clone)]
@@ -13,8 +7,9 @@ pub struct Bios {
     rom: Box<[u8]>,
     /// Last read value
     last_opcode: u32,
-    /// Arm pointer - used only to read the PC register
-    arm_core: WeakPointer<Arm7tdmiCore<SysBus>>,
+    /// PARCHE gba-emulator-console: PC de la última búsqueda de instrucción, que publica
+    /// la CPU (antes se leía de la CPU con un puntero; ver `arm7tdmi::memory::FetchState`).
+    pub(crate) cpu_pc: u32,
 }
 
 impl Bios {
@@ -22,17 +17,13 @@ impl Bios {
         Bios {
             rom: bios_rom,
             last_opcode: 0xe129f000, // the opcode at [00DCh+8]
-            arm_core: WeakPointer::default(),
+            cpu_pc: 0,
         }
-    }
-
-    pub(super) fn connect_arm_core(&mut self, arm_ptr: WeakPointer<Arm7tdmiCore<SysBus>>) {
-        self.arm_core = arm_ptr;
     }
 
     #[inline]
     fn read_allowed(&self) -> bool {
-        self.arm_core.pc < 0x4000
+        self.cpu_pc < 0x4000
     }
 
     #[inline]
