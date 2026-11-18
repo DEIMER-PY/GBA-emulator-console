@@ -13,6 +13,12 @@ Cada fila es una rama que se integra en `develop` con su pull request.
 | ✅ | `feature/bios-setting` | Elegir un volcado propio de la BIOS desde los ajustes |
 | ✅ | `feature/psg-audio` | Canales de sonido PSG y corrección del resampler del core |
 | ✅ | `chore/release-v0.1.0` | Workflow de ejecutables y publicación |
+| ✅ | `chore/release-hardening` | Ejecutable de Linux compilado en Ubuntu 22.04 (glibc 2.35) y prueba de arranque de 15 s en la CI |
+| ✅ | `fix/bios-calls` | Los juegos se colgaban en la primera llamada a la BIOS en los ejecutables optimizados |
+| ✅ | `feature/app-icon` | Icono propio en la ventana, el `.exe` y la web |
+| ✅ | `feature/display-options` | Estirar, suavizado, líneas de barrido y giro |
+| ✅ | `docs/showcase` | Capturas, pruebas con juegos en Windows y Linux, tecnologías y diagramas |
+| ⬜ | `release v0.1.0` | Publicación en `main` con el tag `v0.1.0` |
 
 La app se portó de una vez desde [replica-NES](https://github.com/DEIMER-PY/replica-NES) (`nes-app`), adaptada a las diferencias de la GBA descritas en [ARQUITECTURA.md](ARQUITECTURA.md), en lugar de repetir rama a rama el camino de la NES.
 
@@ -20,11 +26,11 @@ La app se portó de una vez desde [replica-NES](https://github.com/DEIMER-PY/rep
 
 El core se verificó con la ROM de demostración y con `gba-tests`; la app, abriendo `ppu/hello.gba` de `gba-tests` y comprobando la imagen en la ventana. Falta:
 
-- Juegos comerciales u homebrew reales: imagen, sonido y guardado (SRAM, Flash, EEPROM).
+- Guardado en juegos reales (SRAM, Flash, EEPROM). Crash Bandicoot, Super Mario Bros., Need for Speed: Most Wanted y Sonic Advance 3 arrancan y se juegan en Windows y Linux: ver [PRUEBAS.md](PRUEBAS.md).
 - Sonido: comprobar de oído frente a mGBA. La frecuencia y la amplitud del tono de la demo se verifican en los tests, pero nadie lo ha escuchado todavía.
 - El resto de `gba-tests` (`ppu`, `save`, `bios` con BIOS original) y la suite de mGBA.
 - Mandos físicos, diálogos de archivo, arrastrar y soltar y pantalla completa en la app.
-- Linux y macOS (la CI compila y pasa los tests en Linux, pero la app no se ha ejecutado allí).
+- macOS (sin compilar ni probar).
 
 ## Más adelante (GBA)
 
