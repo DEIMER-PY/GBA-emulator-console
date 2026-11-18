@@ -58,6 +58,25 @@ pub enum MemoryAccessWidth {
 /// let mem = Shared::new(Memory { ... });
 /// let cpu = arm7tdmi::Arm7tdmiCore::new(mem.clone())
 ///
+/// PARCHE gba-emulator-console: estado de la CPU en la última búsqueda de instrucción.
+///
+/// El bus lo necesita para la protección de lectura de la BIOS (solo se lee si la CPU
+/// está ejecutando dentro de ella) y para el valor de las lecturas "open bus". El
+/// original lo leía de la CPU con un puntero crudo mientras la CPU tenía `&mut self`:
+/// comportamiento indefinido que, compilado con optimizaciones, devolvía un PC viejo y
+/// rompía todos los juegos que llaman a la BIOS. Ahora la CPU lo publica explícitamente.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct FetchState {
+    /// Dirección de la búsqueda (el registro PC).
+    pub pc: u32,
+    /// La CPU está en modo Thumb.
+    pub thumb: bool,
+    /// Instrucción decodificada (`[$+2]` / `[$+4]`).
+    pub decoded: u32,
+    /// Instrucción precargada (`[$+4]` / `[$+8]`).
+    pub prefetched: u32,
+}
+
 pub trait MemoryInterface {
     /// Read a byte
     fn load_8(&mut self, addr: u32, access: MemoryAccess) -> u8;
@@ -74,6 +93,11 @@ pub trait MemoryInterface {
     fn store_32(&mut self, addr: u32, value: u32, access: MemoryAccess);
 
     fn idle_cycle(&mut self);
+
+    /// PARCHE gba-emulator-console: la CPU avisa de su estado antes y después de cada
+    /// búsqueda de instrucción (ver [`FetchState`]).
+    #[inline]
+    fn set_fetch_state(&mut self, _state: FetchState) {}
 }
 
 impl<I: MemoryInterface> MemoryInterface for Arm7tdmiCore<I> {

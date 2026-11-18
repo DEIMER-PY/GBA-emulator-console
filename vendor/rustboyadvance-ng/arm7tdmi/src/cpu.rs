@@ -402,20 +402,26 @@ impl<I: MemoryInterface> Arm7tdmiCore<I> {
     /// 2S + 1N
     #[inline(always)]
     pub fn reload_pipeline16(&mut self) {
+        self.publish_fetch_state();
         self.pipeline[0] = self.load_16(self.pc, NonSeq) as u32;
         self.advance_thumb();
+        self.publish_fetch_state();
         self.pipeline[1] = self.load_16(self.pc, Seq) as u32;
         self.advance_thumb();
+        self.publish_fetch_state();
         self.next_fetch_access = Seq;
     }
 
     /// 2S + 1N
     #[inline(always)]
     pub fn reload_pipeline32(&mut self) {
+        self.publish_fetch_state();
         self.pipeline[0] = self.load_32(self.pc, NonSeq);
         self.advance_arm();
+        self.publish_fetch_state();
         self.pipeline[1] = self.load_32(self.pc, Seq);
         self.advance_arm();
+        self.publish_fetch_state();
         self.next_fetch_access = Seq;
     }
 
@@ -443,6 +449,25 @@ impl<I: MemoryInterface> Arm7tdmiCore<I> {
     /// If an instruction was executed in this step, return it.
     #[inline]
     pub fn step(&mut self) {
+        self.publish_fetch_state();
+        self.step_inner();
+    }
+
+    /// PARCHE gba-emulator-console: publica en el bus el PC, el modo y la tubería
+    /// (ver `memory::FetchState`).
+    #[inline]
+    fn publish_fetch_state(&mut self) {
+        let state = crate::memory::FetchState {
+            pc: self.pc,
+            thumb: self.cpsr.state() == CpuState::THUMB,
+            decoded: self.pipeline[0],
+            prefetched: self.pipeline[1],
+        };
+        self.bus.set_fetch_state(state);
+    }
+
+    #[inline]
+    fn step_inner(&mut self) {
         match self.cpsr.state() {
             CpuState::ARM => {
                 let pc = self.pc & !3;
@@ -451,6 +476,7 @@ impl<I: MemoryInterface> Arm7tdmiCore<I> {
                 let insn = self.pipeline[0];
                 self.pipeline[0] = self.pipeline[1];
                 self.pipeline[1] = fetched_now;
+                self.publish_fetch_state();
                 let cond = ArmCond::from_u8(insn.bit_range(28..32) as u8)
                     .unwrap_or_else(|| unsafe { std::hint::unreachable_unchecked() });
                 if cond != ArmCond::AL && !self.check_arm_cond(cond) {
@@ -473,6 +499,7 @@ impl<I: MemoryInterface> Arm7tdmiCore<I> {
                 let insn = self.pipeline[0];
                 self.pipeline[0] = self.pipeline[1];
                 self.pipeline[1] = fetched_now as u32;
+                self.publish_fetch_state();
                 match self.step_thumb_exec(insn as u16) {
                     CpuAction::AdvancePC(access) => {
                         self.advance_thumb();

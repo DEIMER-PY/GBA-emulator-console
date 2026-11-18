@@ -147,7 +147,12 @@ impl CycleLookupTables {
 pub struct SysBus {
     pub io: Shared<IoDevices>,
     scheduler: Shared<Scheduler>,
+    /// PARCHE gba-emulator-console: ya no se lee la CPU por aquí (ver `fetch`); se
+    /// conserva porque el depurador del original lo usa.
+    #[allow(dead_code)]
     arm_core: WeakPointer<Arm7tdmiCore<SysBus>>,
+    /// PARCHE gba-emulator-console: estado de la CPU que publica en cada búsqueda.
+    fetch: arm7tdmi::memory::FetchState,
 
     pub(crate) bios: Bios,
     pub(crate) ewram: Box<[u8]>,
@@ -185,6 +190,7 @@ impl SysBus {
             io,
             scheduler,
             arm_core: WeakPointer::default(),
+            fetch: Default::default(),
             cartridge,
 
             bios: Bios::new(bios_rom),
@@ -228,8 +234,7 @@ impl SysBus {
 
     /// must be called whenever this object is instanciated
     pub fn init(&mut self, arm_core: WeakPointer<Arm7tdmiCore<SysBus>>) {
-        self.arm_core = arm_core.clone();
-        self.bios.connect_arm_core(arm_core);
+        self.arm_core = arm_core;
         let ptr = SysBusPtr::new(self as *mut SysBus);
         // HACK
         self.io.set_sysbus_ptr(ptr);
@@ -270,15 +275,16 @@ impl SysBus {
     /// `addr` is considered to be an address of
     fn read_invalid(&mut self, addr: Addr) -> u32 {
         warn!("invalid read @{:08x}", addr);
-        let value = match self.arm_core.cpsr.state() {
-            arm7tdmi::CpuState::ARM => self.arm_core.get_prefetched_opcode(),
-            arm7tdmi::CpuState::THUMB => {
+        let fetch = self.fetch;
+        let value = match fetch.thumb {
+            false => fetch.prefetched,
+            true => {
                 // For THUMB code the result consists of two 16bit fragments and depends on the address area
                 // and alignment where the opcode was stored.
 
-                let decoded = self.arm_core.get_decoded_opcode() & 0xffff; // [$+2]
-                let prefetched = self.arm_core.get_prefetched_opcode() & 0xffff; // [$+4]
-                let r15 = self.arm_core.pc;
+                let decoded = fetch.decoded & 0xffff; // [$+2]
+                let prefetched = fetch.prefetched & 0xffff; // [$+4]
+                let r15 = fetch.pc;
                 let mut value = prefetched;
                 match (r15 >> 24) as usize {
                     PAGE_BIOS | PAGE_OAM => {
@@ -503,6 +509,12 @@ impl DebugRead for SysBus {
 }
 
 impl MemoryInterface for SysBus {
+    #[inline]
+    fn set_fetch_state(&mut self, state: arm7tdmi::memory::FetchState) {
+        self.fetch = state;
+        self.bios.cpu_pc = state.pc;
+    }
+
     #[inline]
     fn load_8(&mut self, addr: u32, access: MemoryAccess) -> u8 {
         self.add_cycles(addr, access, MemoryAccessWidth::MemoryAccess8);

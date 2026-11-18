@@ -37,10 +37,15 @@ impl<I: MemoryInterface> Arm7tdmiCore<I> {
             }
         }
 
-        let new_bank = new_mode.bank_index();
-        self.banks.spsr_bank[new_bank] = self.cpsr;
-        self.banks.gpr_banked_r14[new_bank] = lr;
+        // PARCHE gba-emulator-console: el original guardaba SPSR y LR en el banco del
+        // modo nuevo y dejaba que `change_mode` los cargara. Si la excepción llega en ese
+        // mismo modo (un SWI dentro de la BIOS, que ya corre en Supervisor), `change_mode`
+        // no hace nada y se pierden: el retorno salta a una dirección y un estado de CPU
+        // equivocados. Ahora se escriben en los registros activos tras el cambio de modo.
+        let old_cpsr = self.cpsr;
         self.change_mode(self.cpsr.mode(), new_mode);
+        self.spsr = old_cpsr;
+        self.gpr[14] = lr;
 
         // Set appropriate CPSR bits
         self.cpsr.set_state(CpuState::ARM);
