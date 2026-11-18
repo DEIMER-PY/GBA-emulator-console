@@ -128,6 +128,11 @@ Para actualizar más adelante: `git pull` y de nuevo `cargo build -p gba-app --r
 
 Al abrir la app aparece la pantalla de inicio. Pulsa **Probar la demo**: carga una ROM de demostración propia y la pantalla se ve azul. Al mantener la tecla `X` (botón A) pasa a rojo y suena un tono. Con eso quedan comprobados el vídeo, los controles y el sonido. El resto de teclas y funciones está en [USO.md](USO.md).
 
+## Si no arranca
+
+- **En Linux con Wayland la ventana no se abre** (error de conexión con el compositor): fuerza X11 con `env -u WAYLAND_DISPLAY ./GBA-emulator-console-*-linux-x64`.
+- **Se cierra al abrirla o no dibuja nada:** prueba otro motor gráfico con `WGPU_BACKEND=gl` (Linux) o `set WGPU_BACKEND=dx12` (Windows) antes de abrirla.
+
 ## Dónde conseguir ROMs
 
 El emulador abre archivos `.gba` (también dentro de un `.zip`). **El proyecto no incluye ningún juego**, y este repositorio no enlaza a sitios de descarga de juegos comerciales: esos juegos tienen derechos de autor y descargarlos de internet es ilegal en la mayoría de países, aunque se tenga el cartucho original.
