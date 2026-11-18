@@ -31,6 +31,9 @@ jobs:
       # con sus propios avisos.
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      # Las llamadas a la BIOS, compiladas con el perfil de los ejecutables publicados
+      # (LTO completa): un fallo del core solo aparecía con ese perfil.
+      - run: cargo test --release -p rustboyadvance-core --lib swi
 
   web:
     name: wasm (clippy + build)
