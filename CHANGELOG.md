@@ -5,6 +5,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+### Añadido
+
+- Icono propio de la app: en la ventana, en el ejecutable de Windows (Explorador y barra de tareas) y como favicon de la versión web.
+
 ### Corregido
 
 - **Los juegos no arrancaban en los ejecutables publicados** (Windows y Linux): se colgaban en la primera llamada a la BIOS con «error de emulación». Era un fallo del core que solo aparecía compilado con optimizaciones completas; probado con Sonic Advance 3, Crash Bandicoot: The Huge Adventure, Need for Speed: Most Wanted y Classic NES Series: Super Mario Bros.
