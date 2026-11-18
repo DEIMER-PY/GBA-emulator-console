@@ -5,18 +5,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
-### Añadido
-
-- Documentación: capturas con juegos, registro de pruebas en Windows y Linux (`docs/PRUEBAS.md`), tabla de tecnologías y diagramas de componentes, del ciclo de un frame y de la publicación.
-- Opciones de imagen: estirar hasta llenar la ventana, suavizado, líneas de barrido (efecto de televisor de tubo) y giro de 90°, 180° y 270°.
-- Icono propio de la app: en la ventana, en el ejecutable de Windows (Explorador y barra de tareas) y como favicon de la versión web.
-
-### Corregido
-
-- **Los juegos no arrancaban en los ejecutables publicados** (Windows y Linux): se colgaban en la primera llamada a la BIOS con «error de emulación». Era un fallo del core que solo aparecía compilado con optimizaciones completas; probado con Sonic Advance 3, Crash Bandicoot: The Huge Adventure, Need for Speed: Most Wanted y Classic NES Series: Super Mario Bros.
-- Una llamada a la BIOS hecha desde la propia BIOS perdía su dirección de retorno.
-
-## [0.1.0] - 2026-11-16
+## [0.1.0] - 2026-11-18
 
 Primera versión: emulador de Game Boy Advance para escritorio y web.
 
@@ -34,6 +23,9 @@ Primera versión: emulador de Game Boy Advance para escritorio y web.
 - CI: formato, lints y tests del código propio (nativo y WebAssembly) y suite de tests del core de terceros.
 - CI: workflow `release` que compila los ejecutables de Windows y Linux y los adjunta a la release al subir un tag.
 - Documentación: instalación, uso, versión web, arquitectura, referencias evaluadas, guía de desarrollo y roadmap (GBA y Nintendo DS).
+- Documentación: capturas con juegos, registro de pruebas en Windows y Linux (`docs/PRUEBAS.md`), tabla de tecnologías y diagramas de componentes, del ciclo de un frame y de la publicación.
+- Opciones de imagen: estirar hasta llenar la ventana, suavizado, líneas de barrido (efecto de televisor de tubo) y giro de 90°, 180° y 270°.
+- Icono propio de la app: en la ventana, en el ejecutable de Windows (Explorador y barra de tareas) y como favicon de la versión web.
 
 ### Cambiado respecto al core original
 
@@ -43,6 +35,8 @@ Primera versión: emulador de Game Boy Advance para escritorio y web.
 
 ### Corregido
 
+- **Los juegos se colgaban en los ejecutables optimizados** (Windows y Linux) en la primera llamada a la BIOS, con «error de emulación». Era un fallo del core que solo aparecía compilado con optimizaciones completas; probado con Sonic Advance 3, Crash Bandicoot: The Huge Adventure, Need for Speed: Most Wanted y Classic NES Series: Super Mario Bros.
+- Una llamada a la BIOS hecha desde la propia BIOS perdía su dirección de retorno.
 - Core: la memoria de guardado se comporta como un bus de 8 bits (las lecturas de 16 y 32 bits repiten el byte, las escrituras guardan uno solo) y un cartucho sin guardado lee `0xFF`. Detectado al añadir las ROMs de guardado de `gba-tests` a la suite.
 - Core: el resampler de audio interpolaba al revés y añadía un pico en cada transición de la señal; afectaba a todo el sonido. Detectado al medir la frecuencia del tono de la demo.
 - Core: los volúmenes maestros (3 bits) y el volumen PSG (2 bits) se leían con un bit de menos.
@@ -51,6 +45,6 @@ Primera versión: emulador de Game Boy Advance para escritorio y web.
 ### Limitaciones conocidas
 
 - Los canales PSG se muestrean sin filtro: los tonos muy agudos pueden sonar ásperos. El sonido no se ha comprobado de oído.
-- Sin probar con juegos comerciales: solo con la ROM de demostración y las ROMs de `gba-tests`.
+- Need for Speed: Most Wanted y Sonic Advance 3 solo se probaron hasta sus menús; los mandos, solo en tests (sin mando físico). Ver `docs/PRUEBAS.md`.
 - Escrituras de 16 y 32 bits no alineadas en la memoria de guardado (no afecta al acceso byte a byte que usan los juegos).
 - En la web caben unos cuatro save states en total, y un fallo del core cierra la página.

@@ -2,7 +2,7 @@
 
 Cada fila es una rama que se integra en `develop` con su pull request.
 
-## v0.1.0 — preparada el 2026-11-16
+## v0.1.0 — publicada el 2026-11-18
 
 | Estado | Rama | Funcionalidad |
 |---|---|---|
@@ -18,7 +18,7 @@ Cada fila es una rama que se integra en `develop` con su pull request.
 | ✅ | `feature/app-icon` | Icono propio en la ventana, el `.exe` y la web |
 | ✅ | `feature/display-options` | Estirar, suavizado, líneas de barrido y giro |
 | ✅ | `docs/showcase` | Capturas, pruebas con juegos en Windows y Linux, tecnologías y diagramas |
-| ⬜ | `release v0.1.0` | Publicación en `main` con el tag `v0.1.0` |
+| ✅ | `release v0.1.0` | Publicación en `main` con el tag `v0.1.0` |
 
 La app se portó de una vez desde [replica-NES](https://github.com/DEIMER-PY/replica-NES) (`nes-app`), adaptada a las diferencias de la GBA descritas en [ARQUITECTURA.md](ARQUITECTURA.md), en lugar de repetir rama a rama el camino de la NES.
 
