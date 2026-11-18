@@ -407,3 +407,84 @@ fn test_gba_tests_arm_with_open_bios() {
 
 // `bios/bios.gba` no se ejecuta con la BIOS libre: comprueba los valores concretos
 // que deja en el bus la BIOS original de Nintendo, que otra BIOS no puede reproducir.
+
+// ── PARCHE gba-emulator-console: llamadas a la BIOS ──────────────────────────
+//
+// Las ROMs de gba-tests solo llaman a la BIOS (`swi`) cuando un test falla, así que
+// no detectaron que, compilado con optimizaciones, la protección de lectura de la BIOS
+// usaba un PC viejo: la CPU leía basura en el vector de SWI y ningún juego arrancaba.
+
+/// ROM mínima: en 0x00 salta a 0xC0, donde va `code`.
+fn rom_with_code(code: &[u8]) -> Vec<u8> {
+    let mut rom = vec![0u8; 0xC0];
+    rom[..4].copy_from_slice(&0xEA00_002Eu32.to_le_bytes()); // b 0x080000C0
+    rom.extend_from_slice(code);
+    rom.resize(0x1000, 0);
+    rom
+}
+
+fn arm(words: &[u32]) -> Vec<u8> {
+    words.iter().flat_map(|w| w.to_le_bytes()).collect()
+}
+
+/// Ejecuta `code` con la BIOS libre y devuelve la consola tras unos frames.
+fn run_code(code: &[u8]) -> GameBoyAdvance {
+    let mut gba = make_app_gba(&rom_with_code(code));
+    for _ in 0..10 {
+        gba.frame();
+    }
+    gba
+}
+
+/// `swi 6` (Div) desde ARM: r0 = 100 / 7, r1 = 100 % 7. r12 = 1 marca que se volvió.
+#[test]
+fn test_swi_div_from_arm() {
+    let gba = run_code(&arm(&[
+        0xE3A0_0064, // mov r0, #100
+        0xE3A0_1007, // mov r1, #7
+        0xEF06_0000, // swi 0x060000
+        0xE3A0_C001, // mov r12, #1
+        0xEAFF_FFFE, // b .
+    ]));
+    assert_eq!(gba.cpu.gpr[12], 1, "no volvió del SWI (pc {:#010x})", gba.cpu.pc);
+    assert_eq!((gba.cpu.gpr[0], gba.cpu.gpr[1]), (14, 2));
+}
+
+/// Lo mismo desde Thumb, como llaman a la BIOS casi todos los juegos.
+#[test]
+fn test_swi_div_from_thumb() {
+    let mut code = arm(&[
+        0xE28F_0001, // add r0, pc, #1   (r0 = dirección del código Thumb | 1)
+        0xE12F_FF10, // bx r0
+    ]);
+    for half in [
+        0x2064u16, // movs r0, #100
+        0x2107,    // movs r1, #7
+        0xDF06,    // swi 6
+        0x2701,    // movs r7, #1
+        0xE7FE,    // b .
+    ] {
+        code.extend_from_slice(&half.to_le_bytes());
+    }
+    let gba = run_code(&code);
+    assert_eq!(gba.cpu.gpr[7], 1, "no volvió del SWI (pc {:#010x})", gba.cpu.pc);
+    assert_eq!((gba.cpu.gpr[0], gba.cpu.gpr[1]), (14, 2));
+    assert_eq!(gba.cpu.cpsr.state(), CpuState::THUMB);
+}
+
+/// Un SWI llamado ya en modo Supervisor (el de la BIOS) debe guardar su propia
+/// dirección de retorno y su SPSR, aunque no cambie el banco de registros.
+#[test]
+fn test_swi_from_supervisor_mode() {
+    let gba = run_code(&arm(&[
+        0xE321_F0D3, // msr cpsr_c, #0xD3   (Supervisor, IRQ y FIQ desactivadas)
+        0xE3A0_0064, // mov r0, #100
+        0xE3A0_1007, // mov r1, #7
+        0xEF06_0000, // swi 0x060000
+        0xE3A0_C001, // mov r12, #1
+        0xEAFF_FFFE, // b .
+    ]));
+    assert_eq!(gba.cpu.gpr[12], 1, "no volvió del SWI (pc {:#010x})", gba.cpu.pc);
+    assert_eq!((gba.cpu.gpr[0], gba.cpu.gpr[1]), (14, 2));
+    assert_eq!(gba.cpu.cpsr.mode(), arm7tdmi::CpuMode::Supervisor);
+}
