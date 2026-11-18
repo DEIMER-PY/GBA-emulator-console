@@ -1,0 +1,149 @@
+name: Release
+
+# Al subir un tag `vX.Y.Z` compila los ejecutables de Windows y Linux, comprueba que
+# arrancan con la ROM de demostración y los publica en la release de GitHub.
+# Lanzado a mano (`workflow_dispatch`), o en un PR que cambie este archivo, hace lo
+# mismo sin publicar: los ejecutables y las capturas quedan como artefactos.
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths: [".github/workflows/release.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+            binary: target/release/gba-app.exe
+            suffix: windows-x64.exe
+          # 22.04 y no la última: el ejecutable funciona en las distribuciones con una
+          # glibc igual o más nueva que la del sistema donde se compila (2.35).
+          - name: linux-x64
+            os: ubuntu-22.04
+            binary: target/release/gba-app
+            suffix: linux-x64
+    steps:
+      - uses: actions/checkout@v4
+
+      # Compilar: sonido (cpal), mandos (gilrs), ventana (winit), diálogos (rfd).
+      # Probar: pantalla virtual (Xvfb), render por software (Mesa) y capturas.
+      - name: Instalar dependencias de Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libudev-dev libxkbcommon-dev libwayland-dev libgtk-3-dev \
+            libxkbcommon-x11-0 xvfb mesa-vulkan-drivers libgl1-mesa-dri libegl1 imagemagick
+
+      - name: Instalar el toolchain del proyecto
+        run: rustup toolchain install || rustup show
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release
+
+      - name: Compilar
+        run: cargo build --release -p gba-app
+
+      - name: Nombre del ejecutable
+        id: name
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME}"
+          [[ "$version" == v* ]] || version="dev-${GITHUB_SHA::7}"
+          file="GBA-emulator-console-${version}-${{ matrix.suffix }}"
+          cp "${{ matrix.binary }}" "$file"
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+
+      # Prueba de humo: la app abre la ROM de demostración y sigue viva 15 segundos.
+      # Si no encuentra cómo dibujar o falla al cargar, se cierra antes y el paso falla.
+      - name: Escribir la ROM de demostración
+        run: cargo run -p gba-core --example dump_demo -- demo.gba
+
+      - name: Probar el ejecutable (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $app = Start-Process ".\${{ steps.name.outputs.file }}" -ArgumentList "demo.gba" -PassThru
+          Start-Sleep 15
+          if ($app.HasExited) { throw "la app se cerró (código $($app.ExitCode))" }
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $image = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height
+          [System.Drawing.Graphics]::FromImage($image).CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
+          $image.Save("captura-${{ matrix.name }}.png")
+          Stop-Process $app -Force
+          "La app siguió abierta 15 s"
+
+      - name: Probar el ejecutable (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1280x1024x24 &
+          sleep 2
+          "./${{ steps.name.outputs.file }}" demo.gba &
+          app=$!
+          sleep 15
+          if ! kill -0 "$app" 2>/dev/null; then
+            wait "$app"; echo "la app se cerró (código $?)"; exit 1
+          fi
+          import -window root "captura-${{ matrix.name }}.png"
+          kill "$app"
+          echo "La app siguió abierta 15 s"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: |
+            ${{ steps.name.outputs.file }}
+            captura-${{ matrix.name }}.png
+          if-no-files-found: error
+
+  publish:
+    name: Publicar la release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Notas y sumas de comprobación
+        run: |
+          mkdir release
+          cp artifacts/*/GBA-emulator-console-* release/
+          (cd release && sha256sum GBA-emulator-console-* > SHA256SUMS.txt)
+          # Notas: la sección de esta versión en CHANGELOG.md.
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            /^## \[/ { found = index($0, "[" v "]") > 0; next }
+            found
+          ' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "CHANGELOG.md no tiene la sección [$version]"; exit 1; }
+          printf '\nInstalación: [docs/INSTALACION.md](https://github.com/%s/blob/%s/docs/INSTALACION.md)\n' \
+            "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" >> notes.md
+
+      - name: Crear la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" release/* \
+            --title "GBA-emulator-console $GITHUB_REF_NAME" \
+            --notes-file notes.md \
+            --verify-tag

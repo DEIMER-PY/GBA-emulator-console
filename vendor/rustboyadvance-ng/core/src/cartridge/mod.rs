@@ -1,0 +1,243 @@
+use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
+use arm7tdmi::memory::{Addr, BusIO, DebugRead};
+
+pub mod header;
+use header::CartridgeHeader;
+
+mod backup;
+pub use backup::BackupType;
+use backup::eeprom::EepromController;
+use backup::flash::Flash;
+use backup::{BackupFile, BackupMemoryInterface};
+
+mod gpio;
+mod rtc;
+use gpio::Gpio;
+
+mod builder;
+pub mod loader;
+pub use builder::GamepakBuilder;
+
+pub const GPIO_PORT_DATA: u32 = 0xC4;
+pub const GPIO_PORT_DIRECTION: u32 = 0xC6;
+pub const GPIO_PORT_CONTROL: u32 = 0xC8;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum BackupMedia {
+    Sram(BackupFile),
+    Flash(Flash),
+    Eeprom(EepromController),
+    Undetected,
+}
+
+pub type SymbolTable = HashMap<String, u32>;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Cartridge {
+    pub header: CartridgeHeader,
+    #[serde(skip)]
+    bytes: Box<[u8]>,
+    #[serde(skip)]
+    size: usize,
+    gpio: Option<Gpio>,
+    symbols: Option<SymbolTable>, // TODO move it somewhere else
+    pub(crate) backup: BackupMedia,
+}
+
+impl Cartridge {
+    pub fn get_symbols(&self) -> &Option<SymbolTable> {
+        &self.symbols
+    }
+    pub fn get_gpio(&self) -> &Option<Gpio> {
+        &self.gpio
+    }
+
+    /// PARCHE gba-emulator-console: memoria de guardado del cartucho (SRAM, Flash o
+    /// EEPROM) como bytes, o `None` si el cartucho no guarda partida.
+    pub fn backup_bytes(&self) -> Option<Vec<u8>> {
+        match &self.backup {
+            BackupMedia::Sram(memory) => Some(memory.bytes().to_vec()),
+            BackupMedia::Flash(flash) => Some(flash.backup_bytes().to_vec()),
+            BackupMedia::Eeprom(eeprom) => Some(eeprom.backup_bytes()),
+            BackupMedia::Undetected => None,
+        }
+    }
+
+    /// PARCHE gba-emulator-console: restaura la memoria de guardado desde bytes.
+    pub fn load_backup_bytes(&mut self, data: &[u8]) {
+        match &mut self.backup {
+            BackupMedia::Sram(memory) => memory.load_bytes(data),
+            BackupMedia::Flash(flash) => flash.load_backup_bytes(data),
+            BackupMedia::Eeprom(eeprom) => eeprom.load_backup_bytes(data),
+            BackupMedia::Undetected => {}
+        }
+    }
+
+    pub fn set_rom_bytes(&mut self, bytes: Box<[u8]>) {
+        self.size = bytes.len();
+        self.bytes = bytes;
+    }
+
+    pub fn get_rom_bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    // 'Clones' the cartridge without the ROM buffer
+    pub fn thin_copy(&self) -> Cartridge {
+        Cartridge {
+            header: self.header.clone(),
+            bytes: Default::default(),
+            size: 0,
+            gpio: self.gpio.clone(),
+            symbols: self.symbols.clone(),
+            backup: self.backup.clone(),
+        }
+    }
+
+    pub fn update_from(&mut self, other: Cartridge) {
+        self.header = other.header;
+        self.gpio = other.gpio;
+        self.symbols = other.symbols;
+        self.backup = other.backup;
+    }
+
+    #[inline]
+    /// From GBATEK:
+    /// Reading from GamePak ROM when no Cartridge is inserted -
+    ///     Because Gamepak uses the same signal-lines for both 16bit data and for lower 16bit halfword address,
+    ///     the entire gamepak ROM area is effectively filled by incrementing 16bit values (Address/2 AND FFFFh).
+    fn read_unused(&self, addr: Addr) -> u8 {
+        let x = (addr / 2) & 0xffff;
+        if addr & 1 != 0 {
+            (x >> 8) as u8
+        } else {
+            x as u8
+        }
+    }
+}
+
+use super::sysbus::consts::*;
+
+pub const EEPROM_BASE_ADDR: u32 = 0x0DFF_FF00;
+
+/// PARCHE gba-emulator-console: si la dirección cae en la memoria de guardado.
+fn is_backup_access(addr: u32) -> bool {
+    matches!(addr & 0xff000000, SRAM_LO | SRAM_HI)
+}
+
+fn is_gpio_access(addr: u32) -> bool {
+    matches!(
+        addr & 0x1ff_ffff,
+        GPIO_PORT_DATA | GPIO_PORT_DIRECTION | GPIO_PORT_CONTROL
+    )
+}
+
+impl BusIO for Cartridge {
+    fn read_8(&mut self, addr: Addr) -> u8 {
+        let offset = (addr & 0x01ff_ffff) as usize;
+        match addr & 0xff000000 {
+            SRAM_LO | SRAM_HI => match &self.backup {
+                BackupMedia::Sram(memory) => memory.read((addr & 0x7FFF) as usize),
+                BackupMedia::Flash(flash) => flash.read(addr),
+                // PARCHE gba-emulator-console: sin memoria de guardado el bus devuelve
+                // 0xFF, no 0 (gba-tests save/none).
+                _ => 0xff,
+            },
+            _ => {
+                if offset >= self.size {
+                    self.read_unused(addr)
+                } else {
+                    unsafe { *self.bytes.get_unchecked(offset) }
+                }
+            }
+        }
+    }
+
+    fn read_16(&mut self, addr: u32) -> u16 {
+        // PARCHE gba-emulator-console: la memoria de guardado tiene un bus de 8 bits;
+        // una lectura más ancha repite el mismo byte (gba-tests save/sram, save/flash).
+        if is_backup_access(addr) {
+            return u16::from(self.read_8(addr)) * 0x0101;
+        }
+        if is_gpio_access(addr)
+            && let Some(gpio) = &self.gpio
+        {
+            if !(gpio.is_readable()) {
+                warn!("trying to read GPIO when reads are not allowed");
+            }
+            return gpio.read(addr & 0x1ff_ffff);
+        }
+
+        if addr & 0xff000000 == GAMEPAK_WS2_HI
+            && (self.bytes.len() <= 16 * 1024 * 1024 || addr >= EEPROM_BASE_ADDR)
+            && let BackupMedia::Eeprom(spi) = &self.backup
+        {
+            return spi.read_half(addr);
+        }
+        self.default_read_16(addr)
+    }
+
+    fn write_8(&mut self, addr: u32, value: u8) {
+        match addr & 0xff000000 {
+            SRAM_LO | SRAM_HI => match &mut self.backup {
+                BackupMedia::Flash(flash) => flash.write(addr, value),
+                BackupMedia::Sram(memory) => memory.write((addr & 0x7FFF) as usize, value),
+                _ => {}
+            },
+            _ => {} // TODO allow the debugger to write
+        };
+    }
+
+    // PARCHE gba-emulator-console: ver `read_16`.
+    fn read_32(&mut self, addr: u32) -> u32 {
+        if is_backup_access(addr) {
+            return u32::from(self.read_8(addr)) * 0x0101_0101;
+        }
+        self.read_16(addr) as u32 | (self.read_16(addr + 2) as u32) << 16
+    }
+
+    // PARCHE gba-emulator-console: una escritura ancha en la memoria de guardado solo
+    // almacena un byte.
+    fn write_32(&mut self, addr: u32, value: u32) {
+        if is_backup_access(addr) {
+            return self.write_8(addr, value as u8);
+        }
+        self.write_16(addr, (value & 0xffff) as u16);
+        self.write_16(addr + 2, (value >> 16) as u16);
+    }
+
+    fn write_16(&mut self, addr: u32, value: u16) {
+        // PARCHE gba-emulator-console: ver `write_32`.
+        if is_backup_access(addr) {
+            return self.write_8(addr, value as u8);
+        }
+        if is_gpio_access(addr)
+            && let Some(gpio) = &mut self.gpio
+        {
+            gpio.write(addr & 0x1ff_ffff, value);
+            return;
+        }
+
+        if addr & 0xff000000 == GAMEPAK_WS2_HI
+            && (self.bytes.len() <= 16 * 1024 * 1024 || addr >= EEPROM_BASE_ADDR)
+            && let BackupMedia::Eeprom(spi) = &mut self.backup
+        {
+            return spi.write_half(addr, value);
+        }
+        self.default_write_16(addr, value);
+    }
+}
+
+impl DebugRead for Cartridge {
+    fn debug_read_8(&mut self, addr: Addr) -> u8 {
+        let offset = (addr & 0x01ff_ffff) as usize;
+        if offset >= self.size {
+            self.read_unused(addr)
+        } else {
+            self.bytes[offset]
+        }
+    }
+}

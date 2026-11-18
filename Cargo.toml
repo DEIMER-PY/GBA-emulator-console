@@ -1,0 +1,44 @@
+[workspace]
+resolver = "3"
+members = ["crates/gba-core", "crates/gba-app"]
+# El core de terceros se compila como dependencia, pero no forma parte del workspace:
+# así `cargo clippy`/`cargo fmt`/`cargo test` solo actúan sobre el código propio.
+exclude = ["vendor"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "MIT"
+authors = ["DEIMER-PY"]
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+
+# El core de emulación es intensivo en CPU: se optimiza también en builds de desarrollo
+# para que el emulador corra a velocidad real con `cargo run`.
+[profile.dev.package.arm7tdmi]
+opt-level = 3
+
+[profile.dev.package.rustboyadvance-core]
+opt-level = 3
+
+[profile.dev.package.rustboyadvance-utils]
+opt-level = 3
+
+[profile.dev.package.gba-core]
+opt-level = 3
+
+[profile.dev]
+debug = "line-tables-only"
+
+# Perfil de publicación. A diferencia de replica-NES no se usa `panic = "abort"`:
+# el core de GBA puede hacer `panic!` ante hardware no soportado, y `gba-core` lo
+# captura para mostrar un error en vez de cerrar la app.
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true
