@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     input::{KeyBindings, PadBindings},
     rom::RecentRoms,
-    video::Scaling,
+    video::{Rotation, Scaling},
 };
 
 /// Clave bajo la que se guarda la configuración.
@@ -26,6 +26,14 @@ pub struct Config {
     pub bios_path: Option<std::path::PathBuf>,
     /// Escalar la imagen solo en múltiplos enteros.
     pub integer_scaling: bool,
+    /// Estirar la imagen hasta llenar la ventana.
+    pub stretch: bool,
+    /// Giro de la imagen.
+    pub rotation: Rotation,
+    /// Suavizar la imagen al escalar.
+    pub smooth: bool,
+    /// Líneas de barrido, como en un televisor de tubo.
+    pub scanlines: bool,
     /// Teclas asignadas a los botones de la GBA.
     pub key_bindings: KeyBindings,
     /// Botones de mando asignados a los botones de la GBA.
@@ -43,6 +51,10 @@ impl Default for Config {
             rom_dir: None,
             bios_path: None,
             integer_scaling: true,
+            stretch: false,
+            rotation: Rotation::None,
+            smooth: false,
+            scanlines: false,
             key_bindings: KeyBindings::default(),
             pad_bindings: PadBindings::default(),
             volume: 80,
@@ -56,6 +68,10 @@ impl Config {
     pub const fn scaling(&self) -> Scaling {
         Scaling {
             integer: self.integer_scaling,
+            stretch: self.stretch,
+            rotation: self.rotation,
+            smooth: self.smooth,
+            scanlines: self.scanlines,
         }
     }
 

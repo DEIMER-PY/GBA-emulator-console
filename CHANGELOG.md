@@ -5,6 +5,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Sin publicar]
 
+### Añadido
+
+- Opciones de imagen: estirar hasta llenar la ventana, suavizado, líneas de barrido (efecto de televisor de tubo) y giro de 90°, 180° y 270°.
+
 ## [0.1.0] - 2026-11-16
 
 Primera versión: emulador de Game Boy Advance para escritorio y web.

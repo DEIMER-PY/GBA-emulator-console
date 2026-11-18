@@ -329,8 +329,24 @@ impl GbaApp {
 
     /// Opciones de imagen, compartidas por el menú Ver y la ventana de ajustes.
     pub(crate) fn video_controls(&mut self, ui: &mut egui::Ui) {
-        ui.checkbox(&mut self.config.integer_scaling, "Escalado entero")
-            .on_hover_text("Escala solo ×1, ×2, ×3... para que todos los píxeles midan lo mismo.");
+        ui.add_enabled_ui(!self.config.stretch, |ui| {
+            ui.checkbox(&mut self.config.integer_scaling, "Escalado entero")
+                .on_hover_text(
+                    "Escala solo ×1, ×2, ×3... para que todos los píxeles midan lo mismo.",
+                );
+        });
+        ui.checkbox(&mut self.config.stretch, "Estirar hasta llenar la ventana")
+            .on_hover_text("Ocupa toda la ventana aunque la imagen se deforme.");
+        ui.checkbox(&mut self.config.smooth, "Suavizar la imagen")
+            .on_hover_text("Filtra la imagen al escalarla: menos pixelada, pero más borrosa.");
+        ui.checkbox(&mut self.config.scanlines, "Líneas de barrido")
+            .on_hover_text("Oscurece una franja de cada línea, como en un televisor de tubo.");
+        ui.horizontal_wrapped(|ui| {
+            ui.label("Giro:");
+            for rotation in crate::video::Rotation::ALL {
+                ui.radio_value(&mut self.config.rotation, rotation, rotation.label());
+            }
+        });
 
         // En la web la pantalla completa la gestiona el propio navegador (F11).
         #[cfg(not(target_arch = "wasm32"))]
